@@ -9,7 +9,7 @@
 conn_entry_t* conn_table = NULL;
 
 /**
- * insert an entry to the coonnection table. It will allocate new memory
+ * insert an entry to the connection table. It will allocate new memory
  * on the heap, insert it into the linked list and return a pointer
  * to the newly created entry.
  *
@@ -28,10 +28,10 @@ conn_entry_t* conn_table_insert(void) {
 }
 
 /**
- * remove an entry from the NAT table.
+ * remove an entry from the connection table.
  * The entry will also be freed from the heap.
  *
- * @param entry pointer to the NAT table entry to be removed
+ * @param entry pointer to the entry to be removed
  */
 void conn_table_remove(conn_entry_t* entry) {
 	if (entry->prev != NULL) {
@@ -46,11 +46,11 @@ void conn_table_remove(conn_entry_t* entry) {
 }
 
 /**
- * find the NAT table entry by its connection id. If not found
+ * find the connection table entry by its connection id. If not found
  * it will return NULL.
  *
  * @param id connection id
- * @return pointer to NAT table entry or NULL
+ * @return pointer to connection table entry or NULL
  */
 conn_entry_t* conn_table_find_id(uint8_t id) {
 	conn_entry_t* p = conn_table;
@@ -64,12 +64,12 @@ conn_entry_t* conn_table_find_id(uint8_t id) {
 }
 
 /**
- * find the NAT table entry by its client address. It will compare
+ * find the connection table entry by its client address. It will compare
  * the entire sockaddr struct (port and address) to identify the
  * entry. If not found it will return NULL.
  *
  * @param addr pointer to sockaddr struct
- * @return pointer to NAT table entry or NULL
+ * @return pointer to connection table entry or NULL
  */
 conn_entry_t* nat_table_find_address(struct sockaddr_in* addr) {
 	conn_entry_t* p = conn_table;
@@ -83,9 +83,11 @@ conn_entry_t* nat_table_find_address(struct sockaddr_in* addr) {
 }
 
 /**
- * check all NAT table entries for their last usage time and remove
+ * check all connection table entries for their last usage time and remove
  * all entries that have been inactive for longer than the defined lifetime.
- * This function is meant to be called periodically, every few seconds.
+ * This function is meant to be called periodically every few seconds.
+ *
+ * @param max_age inactivity time in seconds
  */
 void conn_table_clean(time_t max_age) {
 	conn_entry_t* p = conn_table;
