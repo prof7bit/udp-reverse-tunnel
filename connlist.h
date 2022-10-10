@@ -6,12 +6,12 @@
 
 typedef struct conn_entry conn_entry_t;
 struct conn_entry {
-	struct sockaddr_in addr;
+    struct sockaddr_in addr;
     int sockfd;
-	conn_entry_t* prev;
-	conn_entry_t* next;
-	time_t time;
-	uint8_t id;
+    conn_entry_t* prev;
+    conn_entry_t* next;
+    time_t time;
+    uint8_t id;
 };
  
 extern conn_entry_t* conn_table;

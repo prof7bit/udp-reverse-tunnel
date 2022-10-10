@@ -16,15 +16,15 @@ conn_entry_t* conn_table = NULL;
  * @return pointer to the entry in the list on the heap
  */
 conn_entry_t* conn_table_insert(void) {
-	conn_entry_t* e = malloc(sizeof(conn_entry_t));
-	memset(e, 0, sizeof(conn_entry_t));
-	e->next = conn_table;
-	if (e->next != NULL) {
+    conn_entry_t* e = malloc(sizeof(conn_entry_t));
+    memset(e, 0, sizeof(conn_entry_t));
+    e->next = conn_table;
+    if (e->next != NULL) {
         e->next->prev = e;
-	}
-	e->prev = NULL;
+    }
+    e->prev = NULL;
     conn_table = e;
-	return e;
+    return e;
 }
 
 /**
@@ -34,15 +34,15 @@ conn_entry_t* conn_table_insert(void) {
  * @param entry pointer to the entry to be removed
  */
 void conn_table_remove(conn_entry_t* entry) {
-	if (entry->prev != NULL) {
-		entry->prev->next = entry->next;
-	} else {
-		conn_table = entry->next;
-	}
-	if (entry->next != NULL) {
-		entry->next->prev = entry->prev;
-	}
-	free(entry);
+    if (entry->prev != NULL) {
+        entry->prev->next = entry->next;
+    } else {
+        conn_table = entry->next;
+    }
+    if (entry->next != NULL) {
+        entry->next->prev = entry->prev;
+    }
+    free(entry);
 }
 
 /**
@@ -53,14 +53,14 @@ void conn_table_remove(conn_entry_t* entry) {
  * @return pointer to connection table entry or NULL
  */
 conn_entry_t* conn_table_find_id(uint8_t id) {
-	conn_entry_t* p = conn_table;
-	while(p != NULL) {
-		if (p->id == id) {
-			return p;
-		}
-		p = p->next;
-	}
-	return NULL;
+    conn_entry_t* p = conn_table;
+    while(p != NULL) {
+        if (p->id == id) {
+            return p;
+        }
+        p = p->next;
+    }
+    return NULL;
 }
 
 /**
@@ -72,14 +72,14 @@ conn_entry_t* conn_table_find_id(uint8_t id) {
  * @return pointer to connection table entry or NULL
  */
 conn_entry_t* nat_table_find_address(struct sockaddr_in* addr) {
-	conn_entry_t* p = conn_table;
-	while(p != NULL) {
-		if (memcmp(&p->addr, addr, sizeof(struct sockaddr_in)) == 0) {
-			return p;
-		}
-		p = p->next;
-	}
-	return NULL;
+    conn_entry_t* p = conn_table;
+    while(p != NULL) {
+        if (memcmp(&p->addr, addr, sizeof(struct sockaddr_in)) == 0) {
+            return p;
+        }
+        p = p->next;
+    }
+    return NULL;
 }
 
 /**
@@ -90,15 +90,15 @@ conn_entry_t* nat_table_find_address(struct sockaddr_in* addr) {
  * @param max_age inactivity time in seconds
  */
 void conn_table_clean(time_t max_age) {
-	conn_entry_t* p = conn_table;
-	while(p != NULL) {
-		if (time(NULL) - p->time > max_age) {
-			conn_entry_t* next = p->next;
-			printf("removing unused connection %d\n", p->id);
-			conn_table_remove(p);
-			p = next;
-		} else {
-			p = p->next;
-		}
-	}
+    conn_entry_t* p = conn_table;
+    while(p != NULL) {
+        if (time(NULL) - p->time > max_age) {
+            conn_entry_t* next = p->next;
+            printf("removing unused connection %d\n", p->id);
+            conn_table_remove(p);
+            p = next;
+        } else {
+            p = p->next;
+        }
+    }
 }
