@@ -10,7 +10,9 @@ RestartSec=60
 
 # adjust the ExecStart line to match your needs
 # -l is the UDP port where the outside agent should listen
-ExecStart=/usr/local/bin/udp-tunnel -l 9999
+# for example:
+# ExecStart=udp-tunnel -l 51820
+ExecStart=udp-tunnel -l {{LISTEN}}
 
 [Install]
 WantedBy=multi-user.target
