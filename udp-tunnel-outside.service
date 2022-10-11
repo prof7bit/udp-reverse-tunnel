@@ -1,0 +1,16 @@
+[Unit]
+Description=reverse UDP tunnel (outside agent)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60
+
+# adjust the ExecStart line to match your needs
+# -l is the UDP port where the outside agent should listen
+ExecStart=/usr/local/bin/udp-tunnel -l 9999
+
+[Install]
+WantedBy=multi-user.target

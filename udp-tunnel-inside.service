@@ -1,0 +1,17 @@
+[Unit]
+Description=reverse UDP tunnel (inside agent)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60
+
+# adjust the ExecStart line to match your needs.
+#  -s private address of tunneled UDP service (for example wireguard server)
+#  -o public address of external jump host where outside agent is running
+ExecStart=/usr/local/bin/udp-tunnel -s localhost:51820 -o jump.example.com:9999
+
+[Install]
+WantedBy=multi-user.target
