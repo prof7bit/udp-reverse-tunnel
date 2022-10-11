@@ -49,26 +49,58 @@ The outside agent will appear as the VPN server to the client, and the inside ag
 
 Multiple client connections are possible because it will open a new socket on the inside agent for every new client connecting on the outside, so to the server it will appear as if multiple clients were running on the inside agent.
 
-## Usage
+## Installation and Usage
 
-Compile the code on both machines. A simple `make` will be sufficient because the code is so simple it has no dependencies other than the standard library.
-
-The binary `udp-tunnel` can operate in two modes, depending on the options it will either be the inside agent or the outside agent.
-
-Now as an example, consider the following scenario:
-
-* LAN: wireguard.fritz.box on port 1111
-* VPS: jumphost.example.com on port 2222
-
-Start the outside agent on your VPS:
+Clone or unzip the code on on both machines and build it. You need at least make and gcc. Enter the source directory and use the command 
 ````
-udp-tunnel -l 2222
+$ make
 ````
-Start the inside agent somewhere in your LAN
+After successful build you end up with the binary `udp-tunnel` in the same folder. Now you can either start it directly from a terminal (with the right options of couse) to make a few quick tests, or you can install it with the help of the makefile.
+
+### Quick test without installing
+
+The compiled binary `udp-tunnel` can either act as the inside agent or as the outside agent, depending on what options yopu pass on the command line.
+
+Assume as an example the VPN server is listening on UDP 1234, running on localhost (same as inside agent) and the oiutside machine is jump.example.com and we want that to listen on UDP port 9999.
+
+On the inside host we start it with
 ````
-udp-tunnel -o jumphost.example.com:2222 -s wireguard.fritz.box:1111
+$ ./udp-tunnel -s localhost:1234 -o jump.example.com:9999
 ````
-At this point, you should be able to point your wireguard client to jumphost.example.com:2222 and get a connection immedtately.
+
+On the outside host we start it with
+````
+$ ./udp-tunnel -l 9999
+````
+
+### Installation with makefile
+
+The makefile contains 3 install targets: `install` to install only the binary, `install-outside` and `install-inside` to also install the systemd service files. The latter two need variables passed to make in order to work properly.
+
+To install the outside agent on on the jump host (assuming you want port 9999) you execute this command:
+````
+$ sudo make install-outside listen=9999
+````
+This will install the binary into `/usr/local/bin` and install a systemd service file into `/etc/systemd/system/` containing the needed command to start it in outside agent mode with port 9999.
+
+To install the inside agent on the inside machine use the following command (assuming as an example your vpn server is localhost:1234 and your jump host is jump.example.com):
+````
+$ sudo make install-inside service=localhost:1234 outside=jump.example.com:9999
+````
+This will again install the binary into /usr/local/bin and a systemd unit file into /etc/systemd/system/
+
+At this point you might want to have a quick look into the systemd unit files to see how the binary is used and to check whether the options are correct. The options should look like described above in the quick test.
+
+After the systemd files are installed and confirmed to be correct they are not yet enabled for autostart, you need to enable and start them. On the Inside machine:
+````
+$ sudo systemctl enable udp-tunnel-inside.service
+$ sudo systemctl start udp-tunnel-inside.service
+````
+and on the outside machine
+````
+$ sudo systemctl enable udp-tunnel-outside.service
+$ sudo systemctl start udp-tunnel-outside.service
+````
 
 ## Beware
 
