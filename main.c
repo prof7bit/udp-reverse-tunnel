@@ -211,6 +211,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
  * main program entry point
  */
 int main(int argc, char *args[]) {
+    setbuf(stdout, NULL);
     args_parsed_t parsed = args_parse(argc, args);
     if (parsed.listenport) {
         run_outside(parsed.listenport);
