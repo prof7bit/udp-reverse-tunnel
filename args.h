@@ -9,6 +9,7 @@ typedef struct {
     int service_port;
     char* outside_host;
     int outside_port;
+    char* secret;
 } args_parsed_t;
 
 args_parsed_t args_parse(int argc, char* args[]);

@@ -42,6 +42,18 @@ static struct argp_option options[] = {
         .group = 2,
         .doc = "listen port"
     },
+    {
+        .group = 3,
+        .doc = "General options:"
+    },
+    {
+        .name = "key",
+        .arg = "string",
+        .key = 'k',
+        .group = 3,
+        .doc = "optional shared password to prevent spoofing"
+    },
+
     {0}
 };
 
@@ -62,6 +74,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state){
         case 'o':
             parsed->outside = arg;
             sscanf(arg, "%m[^:]:%d", &parsed->outside_host, &parsed->outside_port);
+            break;
+
+        case 'k':
+            parsed->secret = arg;
             break;
 
         default:
@@ -89,6 +105,7 @@ args_parsed_t args_parse(int argc, char* args[]) {
     parsed.listenport = 0;
     parsed.service = NULL;
     parsed.outside = NULL;
+    parsed.secret = NULL;
     argp_parse(&argp, argc, args, 0, 0, &parsed);
 
     if ((parsed.listenport > 0) && (parsed.outside != NULL)) {
