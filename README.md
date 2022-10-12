@@ -102,8 +102,23 @@ $ sudo systemctl enable udp-tunnel-outside.service
 $ sudo systemctl start udp-tunnel-outside.service
 ````
 
+## Security
+
+The is no encryption. Packets are forwarded as they are, it is assumed that whatever service you are tunneling knows how to protect or encrypt its data on its own. Usually this is the case for VPN connections.
+
+Additionally an attacker might want to spoof the keepalive packets from the inside agent to confuse the outside agent and divert the tunnel to his own machine, resulting in service disruption. To prevent this very simple attack the keepalive datagrams can be authenticated with a hash based message authentication code. You can use a pre shared password using the -k option on both tunnel ends to activate this feature.
+
+On the inside host you would use it like this
+````
+$ ./udp-tunnel -s localhost:1234 -o jump.example.com:9999 -k mysecretpassword
+````
+
+On the outside host you would start it with
+````
+$ ./udp-tunnel -l 9999 -k mysecretpassword
+````
+The keepalive message will then contain an SHA-256 over this password and over a strictly increasing nonce that can only be used exactly once to prevent simple replay attacks.
+
 ## Beware
 
-This code still has a known security issue. There is no authentication yet, an attacker could easily pose as the inside agent and thereby divert the incoming UDP traffic to his own machine. As long as you are using it only for encrypted VPN this will only result in temporary service disruptions without compromise of private data, but if you are planning to send unencrypted UDP over this tunnel you should be aware that your datagrams can be intercepted.
-
-It is planned to use a pre shared secret and HMAC for the keepalive packets, so an attacker could not spoof them anymore. Until then, this entire thing should only be regarded as a quick and dirty proof of concept and not be used in production.
+This code still has some known issues. Because of the 1 byte header all tunnel datagrams are 1 byte larger than the encapsulated datagrams, this might lead to MTU issues and fragmentation.
