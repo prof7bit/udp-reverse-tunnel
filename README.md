@@ -59,7 +59,7 @@ After successful build you end up with the binary `udp-tunnel` in the same folde
 
 ### Quick test without installing
 
-The compiled binary `udp-tunnel` can either act as the inside agent or as the outside agent, depending on what options yopu pass on the command line.
+The compiled binary `udp-tunnel` can either act as the inside agent or as the outside agent, depending on what options you pass on the command line.
 
 Assume as an example the VPN server is listening on UDP 1234, running on localhost (same as inside agent) and the oiutside machine is jump.example.com and we want that to listen on UDP port 9999.
 
