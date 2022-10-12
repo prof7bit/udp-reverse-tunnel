@@ -55,7 +55,7 @@ Clone or unzip the code on on both machines and build it. You need at least make
 ````
 $ make
 ````
-After successful build you end up with the binary `udp-tunnel` in the same folder. Now you can either start it directly from a terminal (with the right options of couse) to make a few quick tests, or you can install it with the help of the makefile.
+After successful build you end up with the binary `udp-tunnel` in the same folder. Now you can either start it directly from a terminal (with the right options of course) to make a few quick tests, or you can install it with the help of the makefile.
 
 ### Quick test without installing
 
@@ -104,7 +104,7 @@ $ sudo systemctl start udp-tunnel-outside.service
 
 ## Security
 
-The is no encryption. Packets are forwarded as they are, it is assumed that whatever service you are tunneling knows how to protect or encrypt its data on its own. Usually this is the case for VPN connections.
+There is no encryption. Packets are forwarded as they are, it is assumed that whatever service you are tunneling knows how to protect or encrypt its data on its own. Usually this is the case for VPN connections.
 
 Additionally an attacker might want to spoof the keepalive packets from the inside agent to confuse the outside agent and divert the tunnel to his own machine, resulting in service disruption. To prevent this very simple attack the keepalive datagrams can be authenticated with a hash based message authentication code. You can use a pre shared password using the -k option on both tunnel ends to activate this feature.
 
