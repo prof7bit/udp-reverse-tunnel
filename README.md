@@ -81,13 +81,13 @@ To install the outside agent on on the jump host (assuming you want port 9999) y
 ````
 $ sudo make install-outside listen=9999
 ````
-This will install the binary into `/usr/local/bin` and install a systemd service file into `/etc/systemd/system/` containing the needed command to start it in outside agent mode with port 9999.
+This will install the binary into `/usr/local/bin/` and install a systemd service file into `/etc/systemd/system/` containing the needed command to start it in outside agent mode with port 9999.
 
 To install the inside agent on the inside machine use the following command (assuming as an example your vpn server is localhost:1234 and your jump host is jump.example.com):
 ````
 $ sudo make install-inside service=localhost:1234 outside=jump.example.com:9999
 ````
-This will again install the binary into /usr/local/bin and a systemd unit file into /etc/systemd/system/
+This will again install the binary into `/usr/local/bin/` and a systemd unit file into `/etc/systemd/system/`
 
 At this point you might want to have a quick look into the systemd unit files to see how the binary is used and to check whether the options are correct. The options should look like described above in the quick test.
 
@@ -117,6 +117,8 @@ On the outside host you would start it with
 ````
 $ ./udp-tunnel -l 9999 -k mysecretpassword
 ````
+After you got the installation steps from above successfully working you might want to manually edit your systemd files on both ends and add a -k option, then reload and restart on both ends.
+
 The keepalive message will then contain an SHA-256 over this password and over a strictly increasing nonce that can only be used exactly once to prevent simple replay attacks.
 
 ## Beware
