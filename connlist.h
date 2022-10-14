@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdbool.h>
 #include <arpa/inet.h>
 
 #ifndef CONNLIST_H
@@ -14,6 +15,7 @@ struct conn_entry {
     conn_entry_t* next;
     time_t time;
     uint8_t id;
+    bool spare;
 };
  
 extern conn_entry_t* conn_table;
@@ -23,6 +25,7 @@ void conn_table_remove(conn_entry_t* entry);
 conn_entry_t* conn_table_find_id(uint8_t id);
 conn_entry_t* conn_table_find_client_address(struct sockaddr_in* addr);
 conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr);
+conn_entry_t* conn_table_find_next_spare(void);
 void conn_table_clean(time_t max_age);
 
 #endif // CONNLIST_H

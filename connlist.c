@@ -9,6 +9,8 @@
 
 conn_entry_t* conn_table = NULL;
 
+static unsigned count = 0;
+
 /**
  * insert an entry to the connection table. It will allocate new memory
  * on the heap, insert it into the linked list and return a pointer
@@ -25,6 +27,7 @@ conn_entry_t* conn_table_insert(void) {
     }
     e->prev = NULL;
     conn_table = e;
+    ++count;
     return e;
 }
 
@@ -50,6 +53,7 @@ void conn_table_remove(conn_entry_t* entry) {
         close(entry->sock_tunnel);
     }
     free(entry);
+    --count;
 }
 
 /**
@@ -109,8 +113,24 @@ conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr) {
 }
 
 /**
+ * return the next best table entry that has the spare flag set,
+ * return NULL if no such entry exists.
+ */
+conn_entry_t* conn_table_find_next_spare(void) {
+    conn_entry_t* p = conn_table;
+    while(p != NULL) {
+            if (p->spare) {
+                return p;
+            }
+        p = p->next;
+    }
+    return NULL;
+}
+
+/**
  * check all connection table entries for their last usage time and remove
  * all entries that have been inactive for longer than the defined lifetime.
+ * Connections hat are marked as spare connections will not be removed.
  * This function is meant to be called periodically every few seconds.
  *
  * @param max_age inactivity time in seconds
@@ -118,7 +138,7 @@ conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr) {
 void conn_table_clean(time_t max_age) {
     conn_entry_t* p = conn_table;
     while(p != NULL) {
-        if (time(NULL) - p->time > max_age) {
+        if ((time(NULL) - p->time > max_age) && !p->spare) {
             conn_entry_t* next = p->next;
             printf("<6> removing unused connection %d\n", p->id);
             conn_table_remove(p);
@@ -128,3 +148,4 @@ void conn_table_clean(time_t max_age) {
         }
     }
 }
+
