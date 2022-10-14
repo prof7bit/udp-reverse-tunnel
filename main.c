@@ -85,17 +85,14 @@ static void run_outside(unsigned port) {
 
         // Test whether this originates from the inside agent. All possible inside agent
         // tunnel addresses must be present in our connection table.
-        printf("<7> incoming packet\n");
         conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
         if(conn) {
-            printf("<7> found tunnel address in list, forwarding to client\n");
             sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_client, len_addr);
             conn->time = time(NULL);
             continue;
         }
 
         // This is not from one of the known tunnel addresses, so it must be from a client.
-        printf("<7> must be from client\n");
         conn = conn_table_find_client_address(&addr_incoming);
         if (conn == NULL) {
             printf("<6> new client conection from %s:%d\n", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
@@ -103,7 +100,6 @@ static void run_outside(unsigned port) {
             // now try to find a spare tunnel for this new client and activate it
             conn = conn_table_find_next_spare();
             if (conn) {
-                printf("<7> found spare\n");
                 conn->spare = false;
                 memcpy(&conn->addr_client, &addr_incoming, len_addr);
             }
@@ -111,7 +107,6 @@ static void run_outside(unsigned port) {
 
         // if we have a tunnel conection for this client then we can forward it to the inside
         if (conn) {
-            printf("<7> forwarding to tunnel\n");
             sendto(sockfd, buffer, nbytes + 1, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
             conn->time = time(NULL);
         } else {
