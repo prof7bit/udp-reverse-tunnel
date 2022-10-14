@@ -123,9 +123,9 @@ void conn_table_clean(time_t max_age, bool clean_spares) {
         if ((time(NULL) - p->time > max_age) && (clean_spares || !p->spare)) {
             conn_entry_t* next = p->next;
             if (p->spare) {
-                printf("<6> removing stale spare tunnel\n");
+                printf("<6> removing stale spare tunnel from %s:%d\n", inet_ntoa(p->addr_tunnel.sin_addr), p->addr_tunnel.sin_port);
             } else {
-                printf("<6> removing unused connection\n");
+                printf("<6> removing stale tunnel for %s:%d\n", inet_ntoa(p->addr_client.sin_addr), p->addr_client.sin_port);
             }
             conn_table_remove(p);
             p = next;
