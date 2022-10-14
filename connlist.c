@@ -57,24 +57,6 @@ void conn_table_remove(conn_entry_t* entry) {
 }
 
 /**
- * find the connection table entry by its connection id. If not found
- * it will return NULL.
- *
- * @param id connection id
- * @return pointer to connection table entry or NULL
- */
-conn_entry_t* conn_table_find_id(uint8_t id) {
-    conn_entry_t* p = conn_table;
-    while(p != NULL) {
-        if (p->id == id) {
-            return p;
-        }
-        p = p->next;
-    }
-    return NULL;
-}
-
-/**
  * find the connection table entry by its client address. It will compare
  * the entire sockaddr struct (port and address) to identify the
  * entry. If not found it will return NULL.
@@ -140,7 +122,7 @@ void conn_table_clean(time_t max_age) {
     while(p != NULL) {
         if ((time(NULL) - p->time > max_age) && !p->spare) {
             conn_entry_t* next = p->next;
-            printf("<6> removing unused connection %d\n", p->id);
+            printf("<6> removing unused connection");
             conn_table_remove(p);
             p = next;
         } else {
