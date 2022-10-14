@@ -19,7 +19,7 @@
 #include "connlist.h"
 #include "mac.h"
 
-#define NAT_LIFETIME_SECONDS    60
+#define CONN_LIFETIME_SECONDS   60
 #define BUF_SIZE                0xffff
 #define KEEPALIVE_SECONDS       10
 
@@ -72,7 +72,7 @@ static void run_outside(unsigned port) {
                     know_addr_inside = true;
                     printf("<6> got public address of inside agent: %s:%d\n", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
                 }
-                conn_table_clean(NAT_LIFETIME_SECONDS); // periodic cleaning of stale entries
+                conn_table_clean(CONN_LIFETIME_SECONDS); // periodic cleaning of stale entries
                 continue;
             }
         }
@@ -80,26 +80,26 @@ static void run_outside(unsigned port) {
         if (know_addr_inside) {
             if (memcmp(&addr_incoming, &addr_inside, len_addr) == 0) {
                 // This originates from the inside agent, it can only be a tunneled
-                // datagram. We need to look up the client address in out NAT table,
+                // datagram. We need to look up the client address in our connection table,
                 // unpack the payload and send it to the client.
-                conn_entry_t* nat = conn_table_find_id(buffer[1]);
-                if(nat) {
-                    sendto(sockfd, buffer + 2, nbytes - 1, 0, (struct sockaddr*)&nat->addr, len_addr);
+                conn_entry_t* conn = conn_table_find_id(buffer[1]);
+                if(conn) {
+                    sendto(sockfd, buffer + 2, nbytes - 1, 0, (struct sockaddr*)&conn->addr_client, len_addr);
                 }
 
             } else {
-                // This originates from a client. We look up its address in our NAT
+                // This originates from a client. We look up its address in our connection
                 // table (or crate a new entry), wrap it into a tunnel datagram and
                 // send it to the inside agent.
-                conn_entry_t* nat = nat_table_find_address(&addr_incoming);
-                if (nat == NULL) {
-                    nat = conn_table_insert();
-                    memcpy(&nat->addr, &addr_incoming, len_addr);
-                    nat->id = id_counter++;
-                    printf("<6> new client conection %d from %s:%d\n", nat->id, inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                conn_entry_t* conn = conn_table_find_client_address(&addr_incoming);
+                if (conn == NULL) {
+                    conn = conn_table_insert();
+                    memcpy(&conn->addr_client, &addr_incoming, len_addr);
+                    conn->id = id_counter++;
+                    printf("<6> new client conection %d from %s:%d\n", conn->id, inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
                 }
-                nat->time = time(NULL);
-                buffer[0] = nat->id;
+                conn->time = time(NULL);
+                buffer[0] = conn->id;
                 sendto(sockfd, buffer, nbytes + 1, 0, (struct sockaddr*)&addr_inside, len_addr);
             }
         }
@@ -230,7 +230,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
             sendto(sock_outside, &mac, sizeof(mac), 0, (struct sockaddr*)&addr_outside, len_addr);
 
             // remove any stale inactive connections from the connection table and close their sockets.
-            conn_table_clean(NAT_LIFETIME_SECONDS);
+            conn_table_clean(CONN_LIFETIME_SECONDS);
         }
     }
 }

@@ -78,10 +78,29 @@ conn_entry_t* conn_table_find_id(uint8_t id) {
  * @param addr pointer to sockaddr struct
  * @return pointer to connection table entry or NULL
  */
-conn_entry_t* nat_table_find_address(struct sockaddr_in* addr) {
+conn_entry_t* conn_table_find_client_address(struct sockaddr_in* addr) {
     conn_entry_t* p = conn_table;
     while(p != NULL) {
-        if (memcmp(&p->addr, addr, sizeof(struct sockaddr_in)) == 0) {
+        if (memcmp(&p->addr_client, addr, sizeof(struct sockaddr_in)) == 0) {
+            return p;
+        }
+        p = p->next;
+    }
+    return NULL;
+}
+
+/**
+ * find the connection table entry by its tunnel address. It will compare
+ * the entire sockaddr struct (port and address) to identify the
+ * entry. If not found it will return NULL.
+ *
+ * @param addr pointer to sockaddr struct
+ * @return pointer to connection table entry or NULL
+ */
+conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr) {
+    conn_entry_t* p = conn_table;
+    while(p != NULL) {
+        if (memcmp(&p->addr_tunnel, addr, sizeof(struct sockaddr_in)) == 0) {
             return p;
         }
         p = p->next;
