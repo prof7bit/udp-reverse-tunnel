@@ -107,7 +107,7 @@ static void run_outside(unsigned port) {
 
         // if we have a tunnel conection for this client then we can forward it to the inside
         if (conn) {
-            sendto(sockfd, buffer, nbytes + 1, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
+            sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
             conn->time = time(NULL);
         } else {
             printf("<4> could not find tunnel connection for client, dropping package\n");
@@ -120,7 +120,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
     struct timeval tv;
     int fd_max;
     int result;
-    int nbytes;
+    size_t nbytes;
     struct sockaddr_in addr_outside = {0};
     struct sockaddr_in addr_service = {0};
     struct sockaddr_in addr_incoming = {0};
@@ -254,9 +254,9 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
             last_keepalive = time(NULL);
 
             conn_entry_t* e = conn_table;
-            uint64_t nonce = millisec();
 
             // send the keepalive on all currently existing tunnel sockets
+            uint64_t nonce = millisec();
             while(e) {
                 if (e->sock_tunnel > 0) {
                     // the keepalive datagram is a 40 byte message authentication code, based on the sha-256 over 
