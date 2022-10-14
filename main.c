@@ -98,7 +98,7 @@ static void run_outside(unsigned port) {
         printf("<7> must be from client\n");
         conn = conn_table_find_client_address(&addr_incoming);
         if (conn == NULL) {
-            printf("<6> new client conection %d from %s:%d\n", conn->id, inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+            printf("<6> new client conection from %s:%d\n", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
 
             // now try to find a spare tunnel for this new client and activate it
             conn = conn_table_find_next_spare();
