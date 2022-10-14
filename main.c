@@ -34,8 +34,6 @@ static void run_outside(unsigned port) {
     char buffer[BUF_SIZE + 1];
     struct sockaddr_in addr_own = {0};
     struct sockaddr_in addr_incoming = {0};
-    struct sockaddr_in addr_inside = {0};
-    bool know_addr_inside = false;
 
     printf("<6> UDP tunnel outside agent\n");
 
@@ -85,40 +83,34 @@ static void run_outside(unsigned port) {
             }
         }
 
-        if (know_addr_inside) {
-            if (memcmp(&addr_incoming, &addr_inside, len_addr) == 0) {
-                // This originates from the inside agent, it can only be a tunneled
-                // datagram. We need to look up the client address in our connection table,
-                // unpack the payload and send it to the client.
-                conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
-                if(conn) {
-                    sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_client, len_addr);
-                    conn->time = time(NULL);
-                }
+        // Test whether this originates from the inside agent. All possible inside agent
+        // tunnel addresses must be present in our connection table.
+        conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
+        if(conn) {
+            sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_client, len_addr);
+            conn->time = time(NULL);
+            continue;
+        }
 
-            } else {
-                // This originates from a client. We look up its address in our connection
-                // table (or crate a new entry), wrap it into a tunnel datagram and
-                // send it to the inside agent.
-                conn_entry_t* conn = conn_table_find_client_address(&addr_incoming);
-                if (conn == NULL) {
-                    printf("<6> new client conection %d from %s:%d\n", conn->id, inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+        // This is not from one of the known tunnel addresses, so it must be from a client.
+        conn = conn_table_find_client_address(&addr_incoming);
+        if (conn == NULL) {
+            printf("<6> new client conection %d from %s:%d\n", conn->id, inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
 
-                    // now try to find a spare tunnel for this new client and activate it
-                    conn = conn_table_find_next_spare();
-                    if (conn) {
-                        conn->spare = false;
-                        memcpy(&conn->addr_client, &addr_incoming, len_addr);
-                    }
-                }
-
-                if (conn) {
-                    sendto(sockfd, buffer, nbytes + 1, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
-                    conn->time = time(NULL);
-                } else {
-                    printf("<4> could not find tunnel connection for client, dropping package\n");
-                }
+            // now try to find a spare tunnel for this new client and activate it
+            conn = conn_table_find_next_spare();
+            if (conn) {
+                conn->spare = false;
+                memcpy(&conn->addr_client, &addr_incoming, len_addr);
             }
+        }
+
+        // if we have a tunnel conection for this client then we can forward it to the inside
+        if (conn) {
+            sendto(sockfd, buffer, nbytes + 1, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
+            conn->time = time(NULL);
+        } else {
+            printf("<4> could not find tunnel connection for client, dropping package\n");
         }
     }
 }
