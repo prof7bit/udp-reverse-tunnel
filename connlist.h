@@ -13,8 +13,9 @@ struct conn_entry {
     int sock_tunnel;
     conn_entry_t* prev;
     conn_entry_t* next;
-    time_t time;
     bool spare;
+    uint64_t last_keepalive;
+    uint64_t last_acticity;
 };
  
 extern conn_entry_t* conn_table;
@@ -24,6 +25,6 @@ void conn_table_remove(conn_entry_t* entry);
 conn_entry_t* conn_table_find_client_address(struct sockaddr_in* addr);
 conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr);
 conn_entry_t* conn_table_find_next_spare(void);
-void conn_table_clean(time_t max_age, bool clean_spares);
+void conn_table_clean(unsigned max_age, bool clean_spares);
 
 #endif // CONNLIST_H

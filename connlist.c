@@ -117,11 +117,11 @@ conn_entry_t* conn_table_find_next_spare(void) {
  * @param max_age inactivity time in seconds
  * @param clean_spares should spare entries also be cleaned
  */
-void conn_table_clean(time_t max_age, bool clean_spares) {
+void conn_table_clean(unsigned max_age, bool clean_spares) {
     conn_entry_t* p = conn_table;
     while(p != NULL) {
         conn_entry_t* next = p->next;
-        if ((time(NULL) - p->time > max_age) && (clean_spares || !p->spare)) {
+        if ((time(NULL) - p->last_acticity / 1000 > max_age) && (clean_spares || !p->spare)) {
             if (p->spare) {
                 printf("<6> removing stale spare tunnel from %s:%d\n", inet_ntoa(p->addr_tunnel.sin_addr), p->addr_tunnel.sin_port);
             } else {

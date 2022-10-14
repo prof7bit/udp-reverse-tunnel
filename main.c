@@ -77,7 +77,7 @@ static void run_outside(unsigned port) {
                     memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
                     conn->spare = true;
                 }
-                conn->time = time(NULL);
+                conn->last_acticity = millisec();
                 conn_table_clean(CONN_LIFETIME_SECONDS, true); // periodic cleaning of stale entries
                 continue;
             }
@@ -88,7 +88,7 @@ static void run_outside(unsigned port) {
         conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
         if(conn) {
             sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_client, len_addr);
-            conn->time = time(NULL);
+            conn->last_acticity = millisec();
             continue;
         }
 
@@ -108,7 +108,7 @@ static void run_outside(unsigned port) {
         // if we have a tunnel conection for this client then we can forward it to the inside
         if (conn) {
             sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
-            conn->time = time(NULL);
+            conn->last_acticity = millisec();
         } else {
             printf("<4> could not find tunnel connection for client, dropping package\n");
         }
@@ -127,8 +127,6 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
     struct hostent* he;
     socklen_t len_addr = sizeof(struct sockaddr_in);
     char buffer[BUF_SIZE + 1];
-
-    time_t last_keepalive = 0;
 
     printf("<6> UDP tunnel inside agent\n");
     printf("<6> trying to contact outside agent at %s, port %d\n", outsude_host, outside_port);
@@ -203,7 +201,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                         nbytes = recvfrom(e->sock_service, buffer, BUF_SIZE, 0, (struct sockaddr*) &addr_incoming, &len_addr);
                         if (e->sock_tunnel > 0) {
                             sendto(e->sock_tunnel, buffer, nbytes, 0, (struct sockaddr*)&addr_outside, len_addr);
-                            e->time = time(NULL);
+                            e->last_acticity = millisec();
                         }
                     }
                 }
@@ -231,14 +229,11 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                                 printf("<3> could not create UDP socket for new spare connectionl\n");
                                 exit(EXIT_FAILURE);
                             }
-
-                            // and force keepalive packet immediately to make it known on the outside
-                            last_keepalive = 0;
                         }
 
                         if (e->sock_service > 0) {
                             sendto(e->sock_service, buffer, nbytes, 0, (struct sockaddr*)&addr_service, len_addr);
-                            e->time = time(NULL);
+                            e->last_acticity = millisec();
                         }
                     }
                 }
@@ -250,27 +245,25 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
         // in regular intervals we need to send a keepalive datagram to the outside agent. This has the
         // purpose of punching a hole into the NAT and keeping it open, and it also tells the outside
         // agent the public address and port of that hole, so it can send datagrams back to the inside.
-        if (time(NULL) - last_keepalive > KEEPALIVE_SECONDS) {
-            last_keepalive = time(NULL);
+        e = conn_table;
+        uint64_t ms = millisec();
+        while(e) {
+            if (e->sock_tunnel > 0) {
+                if (ms - e->last_keepalive > KEEPALIVE_SECONDS * 1000) {
+                    e->last_keepalive = ms;
 
-            conn_entry_t* e = conn_table;
-
-            // send the keepalive on all currently existing tunnel sockets
-            uint64_t nonce = millisec();
-            while(e) {
-                if (e->sock_tunnel > 0) {
                     // the keepalive datagram is a 40 byte message authentication code, based on the sha-256 over 
                     // a strictly increasing nonce and a pre shared secret (the -k argument). This is done to
                     // prevent spoofing of the keepalive datagrams by an attacker.
-                    mac_t mac = mac_gen(NULL, 0, nonce++);
+                    mac_t mac = mac_gen(NULL, 0, ms++);
                     sendto(e->sock_tunnel, &mac, sizeof(mac), 0, (struct sockaddr*)&addr_outside, len_addr);
                 }
-                e = e->next;
             }
-
-            // remove any stale inactive connections from the connection table and close their sockets.
-            conn_table_clean(CONN_LIFETIME_SECONDS, false);
+            e = e->next;
         }
+
+        // remove any stale inactive connections from the connection table and close their sockets.
+        conn_table_clean(CONN_LIFETIME_SECONDS, false);
     }
 }
 
