@@ -77,8 +77,8 @@ static void run_outside(unsigned port) {
                     memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
                     conn->spare = true;
                 }
-
-                conn_table_clean(CONN_LIFETIME_SECONDS); // periodic cleaning of stale entries
+                conn->time = time(NULL);
+                conn_table_clean(CONN_LIFETIME_SECONDS, true); // periodic cleaning of stale entries
                 continue;
             }
         }
@@ -269,7 +269,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
             }
 
             // remove any stale inactive connections from the connection table and close their sockets.
-            conn_table_clean(CONN_LIFETIME_SECONDS);
+            conn_table_clean(CONN_LIFETIME_SECONDS, false);
         }
     }
 }

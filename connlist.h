@@ -24,6 +24,6 @@ void conn_table_remove(conn_entry_t* entry);
 conn_entry_t* conn_table_find_client_address(struct sockaddr_in* addr);
 conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr);
 conn_entry_t* conn_table_find_next_spare(void);
-void conn_table_clean(time_t max_age);
+void conn_table_clean(time_t max_age, bool clean_spares);
 
 #endif // CONNLIST_H

@@ -112,17 +112,21 @@ conn_entry_t* conn_table_find_next_spare(void) {
 /**
  * check all connection table entries for their last usage time and remove
  * all entries that have been inactive for longer than the defined lifetime.
- * Connections hat are marked as spare connections will not be removed.
  * This function is meant to be called periodically every few seconds.
  *
  * @param max_age inactivity time in seconds
+ * @param clean_spares should spare entries also be cleaned
  */
-void conn_table_clean(time_t max_age) {
+void conn_table_clean(time_t max_age, bool clean_spares) {
     conn_entry_t* p = conn_table;
     while(p != NULL) {
-        if ((time(NULL) - p->time > max_age) && !p->spare) {
+        if ((time(NULL) - p->time > max_age) && (clean_spares || !p->spare)) {
             conn_entry_t* next = p->next;
-            printf("<6> removing unused connection");
+            if (p->spare) {
+                printf("<6> removing stale spare tunnel");
+            } else {
+                printf("<6> removing unused connection");
+            }
             conn_table_remove(p);
             p = next;
         } else {
