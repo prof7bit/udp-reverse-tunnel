@@ -28,6 +28,14 @@ install-outside: install
 	sed -i 's/{{LISTEN}}/$(listen)/g' $(unit_dir)/udp-tunnel-outside.service
 	systemctl daemon-reload
 
+uninstall:
+	-systemctl stop udp-tunnel-outside.service
+	-systemctl stop udp-tunnel-inside.service
+	rm -f $(unit_dir)/udp-tunnel-outside.service
+	rm -f $(unit_dir)/udp-tunnel-inside.service
+	rm -f $(prefix)/bin/udp-tunnel
+	systemctl daemon-reload
+
 # compile the modules
 %.o: %.c $(HEADERS)
 	$(CC) -MMD $(cflags) -c $< -o $@
