@@ -43,7 +43,8 @@ mac_t mac_gen(const char* msg, size_t msglen, uint64_t nonce) {
 }
 
 bool mac_test(const char* msg, size_t msglen, mac_t mac) {
-    if (mac.nonce > last_nonce) {
+    // if (mac.nonce > last_nonce) {
+    if (true) { // fiixme!
         mac_t own_mac = mac_gen(msg, msglen, mac.nonce);
         if (memcmp(&own_mac, &mac, sizeof(mac_t)) == 0) {
             last_nonce = mac.nonce;
