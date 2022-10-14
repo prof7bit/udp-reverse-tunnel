@@ -162,7 +162,12 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
         FD_SET2(sock_outside);
         conn_entry_t* e = conn_table;
         while (e) {
-            FD_SET2(e->sockfd);
+            if (e->sock_service > 0) {
+                FD_SET2(e->sock_service);
+            }
+            if (e->sock_tunnel > 0) {
+                FD_SET2(e->sock_tunnel);
+            }
             e = e->next;
         }
         tv.tv_sec = 1;
@@ -181,8 +186,8 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
             // check all the sockets in the con table (these are all facing towards the service host)
             conn_entry_t* e = conn_table;
             while (e) {
-                if (FD_ISSET(e->sockfd, &sock_set)) {
-                    nbytes = recvfrom(e->sockfd, buffer + 1, BUF_SIZE - 1, 0, (struct sockaddr*) &addr_incoming, &len_addr);
+                if (FD_ISSET(e->sock_service, &sock_set)) {
+                    nbytes = recvfrom(e->sock_service, buffer + 1, BUF_SIZE - 1, 0, (struct sockaddr*) &addr_incoming, &len_addr);
                     buffer[0] = e->id;
                     sendto(sock_outside, buffer, nbytes + 1, 0, (struct sockaddr*)&addr_outside, len_addr);
                 }
@@ -197,17 +202,17 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                 if (!entry) {
                     entry = conn_table_insert();
                     entry->id = id;
-                    entry->sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-                    if (entry->sockfd < 0) {
+                    entry->sock_service = socket(AF_INET, SOCK_DGRAM, 0);
+                    if (entry->sock_service < 0) {
                         printf("<3> could not create socket for connection %d\n", id);
-                        entry->sockfd = 0;
+                        entry->sock_service = 0;
                     } else {
                         printf("<6> new service connection %d\n", id);
                     }
                 }
-                if (entry->sockfd > 0) {
+                if (entry->sock_service > 0) {
                     entry->time = time(NULL);
-                    sendto(entry->sockfd, buffer + 1, nbytes - 1, 0, (struct sockaddr*)&addr_service, len_addr);
+                    sendto(entry->sock_service, buffer + 1, nbytes - 1, 0, (struct sockaddr*)&addr_service, len_addr);
                 }
             }
         }

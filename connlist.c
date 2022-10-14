@@ -43,8 +43,11 @@ void conn_table_remove(conn_entry_t* entry) {
     if (entry->next != NULL) {
         entry->next->prev = entry->prev;
     }
-    if (entry->sockfd > 0) {
-        close(entry->sockfd);
+    if (entry->sock_service > 0) {
+        close(entry->sock_service);
+    }
+    if (entry->sock_tunnel > 0) {
+        close(entry->sock_tunnel);
     }
     free(entry);
 }

@@ -7,7 +7,8 @@
 typedef struct conn_entry conn_entry_t;
 struct conn_entry {
     struct sockaddr_in addr;
-    int sockfd;
+    int sock_service;
+    int sock_tunnel;
     conn_entry_t* prev;
     conn_entry_t* next;
     time_t time;
