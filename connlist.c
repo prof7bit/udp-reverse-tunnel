@@ -98,7 +98,7 @@ void conn_table_clean(time_t max_age) {
     while(p != NULL) {
         if (time(NULL) - p->time > max_age) {
             conn_entry_t* next = p->next;
-            printf("removing unused connection %d\n", p->id);
+            printf("<6> removing unused connection %d\n", p->id);
             conn_table_remove(p);
             p = next;
         } else {

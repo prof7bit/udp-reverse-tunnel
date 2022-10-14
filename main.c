@@ -32,10 +32,10 @@ static void run_outside(unsigned port) {
     uint8_t id_counter = 0; // fixme
     bool know_addr_inside = false;
 
-    printf("UDP tunnel outside agent\n");
+    printf("<6> UDP tunnel outside agent\n");
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
+        perror("<3> socket creation failed");
         exit(EXIT_FAILURE);
     }
 
@@ -44,11 +44,11 @@ static void run_outside(unsigned port) {
     addr_own.sin_port = htons(port);
 
     if (bind(sockfd, (const struct sockaddr *)&addr_own, sizeof(addr_own)) < 0) {
-        perror("bind failed");
+        perror("<3> bind failed");
         exit(EXIT_FAILURE);
     }
 
-    printf("listening on port %d\n", port);
+    printf("<6> listening on port %d\n", port);
 
     socklen_t len_addr = sizeof(addr_incoming);
     size_t nbytes;
@@ -70,7 +70,7 @@ static void run_outside(unsigned port) {
                 if (memcmp(&addr_inside, &addr_incoming, len_addr) != 0) {
                     memcpy(&addr_inside, &addr_incoming, len_addr);
                     know_addr_inside = true;
-                    printf("got public address of inside agent: %s:%d\n", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                    printf("<6> got public address of inside agent: %s:%d\n", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
                 }
                 conn_table_clean(NAT_LIFETIME_SECONDS); // periodic cleaning of stale entries
                 continue;
@@ -96,7 +96,7 @@ static void run_outside(unsigned port) {
                     nat = conn_table_insert();
                     memcpy(&nat->addr, &addr_incoming, len_addr);
                     nat->id = id_counter++;
-                    printf("new client conection %d from %s:%d\n", nat->id, inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                    printf("<6> new client conection %d from %s:%d\n", nat->id, inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
                 }
                 nat->time = time(NULL);
                 buffer[0] = nat->id;
@@ -122,17 +122,17 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
 
     time_t last_keepalive = time(NULL) - KEEPALIVE_SECONDS;
 
-    printf("UDP tunnel inside agent\n");
-    printf("trying to contact outside agent at %s, port %d\n", outsude_host, outside_port);
-    printf("forwarding incomimg UDP to %s, port %d\n", service_host, service_port);
+    printf("<6> UDP tunnel inside agent\n");
+    printf("<6> trying to contact outside agent at %s, port %d\n", outsude_host, outside_port);
+    printf("<6> forwarding incomimg UDP to %s, port %d\n", service_host, service_port);
 
     if ((sock_outside = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
+        perror("<3> socket creation failed");
         exit(EXIT_FAILURE);
     }
 
     if ((he = gethostbyname(outsude_host)) == NULL) {
-        perror("outside host name could not be resolved");
+        perror("<3> outside host name could not be resolved");
         exit(EXIT_FAILURE);
     }
 
@@ -141,7 +141,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
     addr_outside.sin_port = htons(outside_port);
 
     if ((he = gethostbyname(service_host)) == NULL) {
-        perror("srvice host name could not be resolved");
+        perror("<3> srvice host name could not be resolved");
         exit(EXIT_FAILURE);
     }
 
@@ -170,7 +170,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
         result = select(fd_max + 1, &sock_set, NULL, NULL, &tv);
 
         if (result < 0) {
-            perror("select error");
+            perror("<3> select error");
         }
 
         else if (result == 0) {
@@ -198,10 +198,17 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                     entry = conn_table_insert();
                     entry->id = id;
                     entry->sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-                    printf("new service connection %d\n", id);
+                    if (entry->sockfd < 0) {
+                        printf("<3> could not create socket for connection %d\n", id);
+                        entry->sockfd = 0;
+                    } else {
+                        printf("<6> new service connection %d\n", id);
+                    }
                 }
-                entry->time = time(NULL);
-                sendto(entry->sockfd, buffer + 1, nbytes - 1, 0, (struct sockaddr*)&addr_service, len_addr);
+                if (entry->sockfd > 0) {
+                    entry->time = time(NULL);
+                    sendto(entry->sockfd, buffer + 1, nbytes - 1, 0, (struct sockaddr*)&addr_service, len_addr);
+                }
             }
         }
 
