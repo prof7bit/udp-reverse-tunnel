@@ -23,6 +23,12 @@
 #define BUF_SIZE                0xffff
 #define KEEPALIVE_SECONDS       10
 
+static uint64_t millisec() {
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+    return spec.tv_sec * 1000 + spec.tv_nsec / 1000;
+}
+
 static void run_outside(unsigned port) {
     int sockfd;
     char buffer[BUF_SIZE + 1];
@@ -218,16 +224,25 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
         }
 
         // in regular intervals we need to send a keepalive datagram to the outside agent. This has the
-        // porpose of punching a hole into the NAT and keeping it open, and it also tells the outside
+        // purpose of punching a hole into the NAT and keeping it open, and it also tells the outside
         // agent the public address and port of that hole, so it can send datagrams back to the inside.
         if (time(NULL) - last_keepalive > KEEPALIVE_SECONDS) {
             last_keepalive = time(NULL);
 
-            // the keepalive datagram is a 40 byte message authentication code, based on the sha-256 over 
-            // a strictly increasing nonce and a pre shared secret (the -k argument). This is done to
-            // prevent spoofing of the keepalive datagrams by an attacker.
-            mac_t mac = mac_gen(NULL, 0, time(NULL));
-            sendto(sock_outside, &mac, sizeof(mac), 0, (struct sockaddr*)&addr_outside, len_addr);
+            conn_entry_t* e = conn_table;
+            uint64_t nonce = millisec();
+
+            // send the keepalive on all currently existing tunnel sockets
+            while(e) {
+                if (e->sock_tunnel > 0) {
+                    // the keepalive datagram is a 40 byte message authentication code, based on the sha-256 over 
+                    // a strictly increasing nonce and a pre shared secret (the -k argument). This is done to
+                    // prevent spoofing of the keepalive datagrams by an attacker.
+                    mac_t mac = mac_gen(NULL, 0, nonce++);
+                    sendto(e->sock_tunnel, &mac, sizeof(mac), 0, (struct sockaddr*)&addr_outside, len_addr);
+                }
+                e = e->next;
+            }
 
             // remove any stale inactive connections from the connection table and close their sockets.
             conn_table_clean(CONN_LIFETIME_SECONDS);
