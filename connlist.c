@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 conn_entry_t* conn_table = NULL;
 
@@ -41,6 +42,9 @@ void conn_table_remove(conn_entry_t* entry) {
     }
     if (entry->next != NULL) {
         entry->next->prev = entry->prev;
+    }
+    if (entry->sockfd > 0) {
+        close(entry->sockfd);
     }
     free(entry);
 }
