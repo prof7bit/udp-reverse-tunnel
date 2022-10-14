@@ -242,6 +242,8 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                         }
                     }
                 }
+
+                e = e->next;
             }
         }
 
