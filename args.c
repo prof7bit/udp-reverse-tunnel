@@ -2,7 +2,7 @@
 #include <argp.h>
 #include <stdlib.h>
 
-const char *argp_program_version = "udp-tunnel-1.0";
+const char *argp_program_version = "udp-tunnel-1.1";
 const char *argp_program_bug_address = "<prof7bit@gmail.com>";
 static char doc[] = " \
 creates a reverse UDP tunnel for an UDP srvice behind NAT\n\n \
@@ -18,16 +18,16 @@ static struct argp_option options[] = {
         .doc = "Options for running it as the inside agent:"
     },
     {
-        .name = "outside", 
+        .name = "outside",
         .arg = "host:port",
         .key = 'o',
         .group = 1,
         .doc = "address of the outside agent"
     },
     {
-        .name = "service", 
+        .name = "service",
         .arg = "host:port",
-        .key = 's', 
+        .key = 's',
         .group = 1,
         .doc = "address of the inside service"
     },
@@ -36,9 +36,9 @@ static struct argp_option options[] = {
         .doc = "Options for running it as the outside agent:"
     },
     {
-        .name = "listen", 
+        .name = "listen",
         .arg = "port",
-        .key = 'l', 
+        .key = 'l',
         .group = 2,
         .doc = "listen port"
     },
@@ -58,7 +58,7 @@ static struct argp_option options[] = {
 };
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state){
-    
+
     args_parsed_t* parsed = state->input;
     switch(key){
 
@@ -88,9 +88,9 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state){
 }
 
 static struct argp argp = {
-    .options = options, 
-    .parser = parse_opt, 
-    .args_doc = args_doc, 
+    .options = options,
+    .parser = parse_opt,
+    .args_doc = args_doc,
     .doc = doc
 };
 
