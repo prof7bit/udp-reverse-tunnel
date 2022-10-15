@@ -33,7 +33,7 @@ inside agent                              outside agent
     ||          |         |                    ||
     ||     punch|    punch|                    ||
     | --------->|-------->|-------------------- |
-     -----------|<--------|<-------------------- 
+     -----------|<--------|<--------------------
                 |         |
                 |         |
                NAT     CG-NAT
@@ -43,15 +43,15 @@ The outside agent is running on a VPS with public IPv4
 
 The inside agent will send UDP datagrams to the public IP and port of the outside agent, this will punch holes into both NATs, the outside agent will receive these datagrams and learn from their source address and port how to send datagrams back to the inside agent.
 
-The VPN client can also send UDP to the outside agent and these datagrams will be forwarded to the inside agent and from there to the VPN server, the VPN server can reply to the inside agent, these will be forwarded to the outside agent and from there to the VPN client.
+The VPN client can send UDP to the outside agent and these datagrams will be forwarded to the inside agent and from there to the VPN server, the VPN server can reply to the inside agent, these will be forwarded to the outside agent and from there to the VPN client.
 
 The outside agent will appear as the VPN server to the client, and the inside agent will appear as the VPN client to the server.
 
-Multiple client connections are possible because it will open a new socket on the inside agent for every new client connecting on the outside, so to the server it will appear as if multiple clients were running on the inside agent.
+Multiple client connections are possible because it will use a tunnel and a new socket on the inside agent for every new client connecting on the outside, so to the server it will appear as if multiple clients were running on the inside agent's host.
 
 ## Installation and Usage
 
-Clone or unzip the code on on both machines and build it. You need at least make and gcc. Enter the source directory and use the command 
+Clone or unzip the code on on both machines and build it. You need at least make and gcc. Enter the source directory and use the command
 ````
 $ make
 ````
@@ -121,6 +121,20 @@ After you got the installation steps from above successfully working you might w
 
 The keepalive message will then contain an SHA-256 over this password and over a strictly increasing nonce that can only be used exactly once to prevent simple replay attacks.
 
+### How it works
+
+Both agents maintain a list of connections, each connection stores socket addresses and socket handles assiciated with that particular client conection.
+
+On startup the inside agent will initiate an outgoing tunnel to the outside agent, mark it as unused and send keepalive packets over it. The outside agent will see these packets and add this tunnel with its source address it to its own connection list. The keepalive packets are signed with a nonce and an authentication code, so they cannot be spoofed or replayed.
+
+When a client connects, the outside agent will send the client data down that unused spare tunnel, the inside agent will see this, mark the tunnel as active, create a socket for communicating with the service and forward data in both directions. It will then also immediately create another new outgoing spare tunnel to be ready for the next incoming client.
+
+When the new spare tunnel arrives at the outside agent it will add it to its own connection list to be able to serve the next connecting client immediately.
+
+At this point both agents have 2 tunnels in their list, one is active and one is spare, waiting for the next client connection.
+
+inactivity timeouts will make sure that dead tunnels (those that had been marked active in the past but no client data for some time) will be deleted and their sockets will be closed. The inside agent will detect the lack of forwarded data for prolonged time, remove it from its own list and close its sockets, then some time later the outside agent will detect that there are no keepalives arriving anymore for this conection and remove it from its own list too.
+
 ## Beware
 
-This code still has some known issues. Because of the 1 byte header all tunnel datagrams are 1 byte larger than the encapsulated datagrams, this might lead to MTU issues and fragmentation.
+This code is still highly experimental, so don't base a multi million dollar business on it, at least not yet. It serves the purpuse perfectly well for me, but it might crash and burn and explode your server for you. You were warned.
