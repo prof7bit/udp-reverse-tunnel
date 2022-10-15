@@ -137,4 +137,4 @@ inactivity timeouts will make sure that dead tunnels (those that had been marked
 
 ## Beware
 
-This code is still highly experimental, so don't base a multi million dollar business on it, at least not yet. It serves the purpuse perfectly well for me, but it might crash and burn and explode your server for you. You were warned.
+This code is still highly experimental, so don't base a multi million dollar business on it, at least not yet. It serves the purpuse perfectly well for me, but it might crash and burn and explode your server for you. You have been warned.
