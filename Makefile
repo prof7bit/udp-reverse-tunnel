@@ -4,7 +4,7 @@ listen      ?= 51820
 prefix      ?= /usr/local
 
 name        = udp-tunnel
-objs        = main.o connlist.o args.o sha-256.o mac.o
+objs        = main.o connlist.o args.o sha-256.o mac.o misc.o
 deps        = $(patsubst %.o,%.d,$(objs))
 cflags      = -O3 -flto -Wall -Wextra
 unit_dir    = /etc/systemd/system

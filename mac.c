@@ -38,7 +38,7 @@ mac_t mac_gen(const char* msg, size_t msglen, uint64_t nonce) {
     memcpy(buf + secret_len + msglen, &nonce, sizeof(nonce));
     calc_sha_256(mac.hash, buf, secret_len + msglen + sizeof(nonce));
     mac.nonce = nonce;
-    free(buf);   
+    free(buf);
     return mac;
 }
 

@@ -7,7 +7,11 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "misc.h"
+
 conn_entry_t* conn_table = NULL;
+
+static unsigned count = 0;
 
 /**
  * insert an entry to the connection table. It will allocate new memory
@@ -25,6 +29,7 @@ conn_entry_t* conn_table_insert(void) {
     }
     e->prev = NULL;
     conn_table = e;
+    ++count;
     return e;
 }
 
@@ -43,28 +48,14 @@ void conn_table_remove(conn_entry_t* entry) {
     if (entry->next != NULL) {
         entry->next->prev = entry->prev;
     }
-    if (entry->sockfd > 0) {
-        close(entry->sockfd);
+    if (entry->sock_service > 0) {
+        close(entry->sock_service);
+    }
+    if (entry->sock_tunnel > 0) {
+        close(entry->sock_tunnel);
     }
     free(entry);
-}
-
-/**
- * find the connection table entry by its connection id. If not found
- * it will return NULL.
- *
- * @param id connection id
- * @return pointer to connection table entry or NULL
- */
-conn_entry_t* conn_table_find_id(uint8_t id) {
-    conn_entry_t* p = conn_table;
-    while(p != NULL) {
-        if (p->id == id) {
-            return p;
-        }
-        p = p->next;
-    }
-    return NULL;
+    --count;
 }
 
 /**
@@ -75,12 +66,46 @@ conn_entry_t* conn_table_find_id(uint8_t id) {
  * @param addr pointer to sockaddr struct
  * @return pointer to connection table entry or NULL
  */
-conn_entry_t* nat_table_find_address(struct sockaddr_in* addr) {
+conn_entry_t* conn_table_find_client_address(struct sockaddr_in* addr) {
     conn_entry_t* p = conn_table;
     while(p != NULL) {
-        if (memcmp(&p->addr, addr, sizeof(struct sockaddr_in)) == 0) {
+        if (memcmp(&p->addr_client, addr, sizeof(struct sockaddr_in)) == 0) {
             return p;
         }
+        p = p->next;
+    }
+    return NULL;
+}
+
+/**
+ * find the connection table entry by its tunnel address. It will compare
+ * the entire sockaddr struct (port and address) to identify the
+ * entry. If not found it will return NULL.
+ *
+ * @param addr pointer to sockaddr struct
+ * @return pointer to connection table entry or NULL
+ */
+conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr) {
+    conn_entry_t* p = conn_table;
+    while(p != NULL) {
+        if (memcmp(&p->addr_tunnel, addr, sizeof(struct sockaddr_in)) == 0) {
+            return p;
+        }
+        p = p->next;
+    }
+    return NULL;
+}
+
+/**
+ * return the next best table entry that has the spare flag set,
+ * return NULL if no such entry exists.
+ */
+conn_entry_t* conn_table_find_next_spare(void) {
+    conn_entry_t* p = conn_table;
+    while(p != NULL) {
+            if (p->spare) {
+                return p;
+            }
         p = p->next;
     }
     return NULL;
@@ -92,17 +117,42 @@ conn_entry_t* nat_table_find_address(struct sockaddr_in* addr) {
  * This function is meant to be called periodically every few seconds.
  *
  * @param max_age inactivity time in seconds
+ * @param clean_spares should spare entries also be cleaned
  */
-void conn_table_clean(time_t max_age) {
+void conn_table_clean(unsigned max_age, bool clean_spares) {
     conn_entry_t* p = conn_table;
+    bool changed = false;
     while(p != NULL) {
-        if (time(NULL) - p->time > max_age) {
-            conn_entry_t* next = p->next;
-            printf("<6> removing unused connection %d\n", p->id);
+        conn_entry_t* next = p->next;
+        if ((millisec() - p->last_acticity > max_age * 1000) && (clean_spares || !p->spare)) {
+            printf("<6> removing connection\n");
             conn_table_remove(p);
-            p = next;
-        } else {
-            p = p->next;
+            changed = true;
         }
+        p = next;
     }
+    if (changed) {
+        conn_print_numbers();
+    }
+}
+
+unsigned conn_count() {
+    return count;
+}
+
+unsigned conn_spare_count() {
+    conn_entry_t* e = conn_table;
+    unsigned cnt = 0;
+    while(e) {
+        if (e->spare) {
+            ++cnt;
+        }
+        e = e->next;
+    }
+    return cnt;
+}
+
+void conn_print_numbers() {
+    unsigned spare = conn_spare_count();
+    printf("<6> Total: %d, active: %d, spare: %d\n", count, count - spare, spare);
 }
