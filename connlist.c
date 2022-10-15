@@ -121,12 +121,34 @@ conn_entry_t* conn_table_find_next_spare(void) {
  */
 void conn_table_clean(unsigned max_age, bool clean_spares) {
     conn_entry_t* p = conn_table;
+    bool changed = false;
     while(p != NULL) {
         conn_entry_t* next = p->next;
         if ((millisec() - p->last_acticity > max_age * 1000) && (clean_spares || !p->spare)) {
-            printf("<6> removing stale tunnel\n");
+            printf("<6> removing connection\n");
             conn_table_remove(p);
+            changed = true;
         }
         p = next;
     }
+    if (changed) {
+        unsigned spare = conn_spare_count();
+        printf("<6> Total: %d, active: %d, spare: %d\n", count, count - spare, spare);
+    }
+}
+
+unsigned conn_count() {
+    return count;
+}
+
+unsigned conn_spare_count() {
+    conn_entry_t* e = conn_table;
+    unsigned cnt = 0;
+    while(e) {
+        if (e->spare) {
+            ++cnt;
+        }
+        e = e->next;
+    }
+    return cnt;
 }

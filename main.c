@@ -71,6 +71,9 @@ static void run_outside(unsigned port) {
                     conn = conn_table_insert();
                     memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
                     conn->spare = true;
+                    unsigned total = conn_count();
+                    unsigned spare = conn_spare_count();
+                    printf("<6> Total: %d, active: %d, spare: %d\n", total, total - spare, spare);
                 }
                 conn->last_acticity = millisec();
                 conn_table_clean(CONN_LIFETIME_SECONDS, true); // periodic cleaning of stale entries
