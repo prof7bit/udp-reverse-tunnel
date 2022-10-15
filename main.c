@@ -71,9 +71,7 @@ static void run_outside(unsigned port) {
                     conn = conn_table_insert();
                     memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
                     conn->spare = true;
-                    unsigned total = conn_count();
-                    unsigned spare = conn_spare_count();
-                    printf("<6> Total: %d, active: %d, spare: %d\n", total, total - spare, spare);
+                    conn_print_numbers();
                 }
                 conn->last_acticity = millisec();
                 conn_table_clean(CONN_LIFETIME_SECONDS, true); // periodic cleaning of stale entries
@@ -125,7 +123,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
     char buffer[BUF_SIZE + 1];
 
     printf("<6> UDP tunnel inside agent\n");
-    printf("<6> trying to contact outside agent at %s, port %d\n", outsude_host, outside_port);
+    printf("<6> building tunnels to outside agent at %s, port %d\n", outsude_host, outside_port);
     printf("<6> forwarding incomimg UDP to %s, port %d\n", service_host, service_port);
 
     if ((he = gethostbyname(outsude_host)) == NULL) {
@@ -148,6 +146,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
 
     // we start out with one unused spare tunnel
     conn_entry_t* spare_conn = conn_table_insert();
+    printf("<6> creating initial outgoing tunnel\n");
     spare_conn->spare = true;
     spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
     if (spare_conn->sock_tunnel < 0) {
@@ -162,7 +161,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
         }\
     }
 
-    while("my guitar gently wheeps") {
+    while("my guitar gently weeps") {
         fd_max = 0;
         FD_ZERO(&sock_set);
         conn_entry_t* e = conn_table;
@@ -209,7 +208,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                         if (e->spare) {
                             // this came in on one of the spare connections
                             // remove the spare status and create a socket to use it
-                            printf("<6> new incoming connection\n");
+                            printf("<6> new client data arrived on spare tunnel, creating socket for it\n");
                             e->spare = false;
                             e->sock_service = socket(AF_INET, SOCK_DGRAM, 0);
                             if (e->sock_service < 0) {
@@ -218,6 +217,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                             }
 
                             // and immediately create another new spare connection
+                            printf("<6> creating new outgoing spare tunnel\n");
                             conn_entry_t* spare_conn = conn_table_insert();
                             spare_conn->spare = true;
                             spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
@@ -225,6 +225,8 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                                 printf("<3> could not create UDP socket for new spare connectionl\n");
                                 exit(EXIT_FAILURE);
                             }
+
+                            conn_print_numbers();
                         }
 
                         if (e->sock_service > 0) {

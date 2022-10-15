@@ -28,5 +28,6 @@ conn_entry_t* conn_table_find_next_spare(void);
 void conn_table_clean(unsigned max_age, bool clean_spares);
 unsigned conn_count();
 unsigned conn_spare_count();
+void conn_print_numbers();
 
 #endif // CONNLIST_H

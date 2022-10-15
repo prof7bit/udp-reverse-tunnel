@@ -132,8 +132,7 @@ void conn_table_clean(unsigned max_age, bool clean_spares) {
         p = next;
     }
     if (changed) {
-        unsigned spare = conn_spare_count();
-        printf("<6> Total: %d, active: %d, spare: %d\n", count, count - spare, spare);
+        conn_print_numbers();
     }
 }
 
@@ -151,4 +150,9 @@ unsigned conn_spare_count() {
         e = e->next;
     }
     return cnt;
+}
+
+void conn_print_numbers() {
+    unsigned spare = conn_spare_count();
+    printf("<6> Total: %d, active: %d, spare: %d\n", count, count - spare, spare);
 }
