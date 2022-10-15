@@ -124,7 +124,7 @@ void conn_table_clean(unsigned max_age, bool clean_spares) {
     while(p != NULL) {
         conn_entry_t* next = p->next;
         if ((millisec() - p->last_acticity > max_age * 1000) && (clean_spares || !p->spare)) {
-            printf("<6> removing stale tunnel\n";
+            printf("<6> removing stale tunnel\n");
             conn_table_remove(p);
         }
         p = next;

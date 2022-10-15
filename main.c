@@ -83,7 +83,6 @@ static void run_outside(unsigned port) {
         conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
         if(conn) {
             sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_client, len_addr);
-            conn->last_acticity = millisec();
             continue;
         }
 
@@ -103,7 +102,6 @@ static void run_outside(unsigned port) {
         // if we have a tunnel conection for this client then we can forward it to the inside
         if (conn) {
             sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
-            conn->last_acticity = millisec();
         } else {
             printf("<4> could not find tunnel connection for client, dropping package\n");
         }
