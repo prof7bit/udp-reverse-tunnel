@@ -18,16 +18,11 @@
 #include "args.h"
 #include "connlist.h"
 #include "mac.h"
+#include "misc.h"
 
 #define CONN_LIFETIME_SECONDS   60
 #define BUF_SIZE                0xffff
 #define KEEPALIVE_SECONDS       10
-
-static uint64_t millisec() {
-    struct timespec spec;
-    clock_gettime(CLOCK_REALTIME, &spec);
-    return spec.tv_sec * 1000 + spec.tv_nsec / 1000;
-}
 
 static void run_outside(unsigned port) {
     int sockfd;
@@ -60,7 +55,7 @@ static void run_outside(unsigned port) {
         nbytes = recvfrom(sockfd, buffer, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &addr_incoming, &len_addr);
 
         // the keepalive datagram from the inside agent is a 40 byte message authentication code
-        // for an empty message with a strictly increasing nonce, each code can only be used 
+        // for an empty message with a strictly increasing nonce, each code can only be used
         // exactly once) to prevent replay attacks. This datagram is used to learn the public
         // address and port of the inside agent.
         if (nbytes == sizeof(mac_t)) {
@@ -179,8 +174,8 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
             }
             e = e->next;
         }
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
+        tv.tv_sec = 0;
+        tv.tv_usec = 100 * 1000;
         result = select(fd_max + 1, &sock_set, NULL, NULL, &tv);
 
         if (result < 0) {
@@ -252,11 +247,12 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
                 if (ms - e->last_keepalive > KEEPALIVE_SECONDS * 1000) {
                     e->last_keepalive = ms;
 
-                    // the keepalive datagram is a 40 byte message authentication code, based on the sha-256 over 
+                    // the keepalive datagram is a 40 byte message authentication code, based on the sha-256 over
                     // a strictly increasing nonce and a pre shared secret (the -k argument). This is done to
                     // prevent spoofing of the keepalive datagrams by an attacker.
-                    mac_t mac = mac_gen(NULL, 0, ms++);
+                    mac_t mac = mac_gen(NULL, 0, ms);
                     sendto(e->sock_tunnel, &mac, sizeof(mac), 0, (struct sockaddr*)&addr_outside, len_addr);
+                    break; // only send one keepalive per select iteration to spread them out in time
                 }
             }
             e = e->next;

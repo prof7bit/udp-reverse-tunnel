@@ -7,6 +7,8 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "misc.h"
+
 conn_entry_t* conn_table = NULL;
 
 static unsigned count = 0;
@@ -121,15 +123,10 @@ void conn_table_clean(unsigned max_age, bool clean_spares) {
     conn_entry_t* p = conn_table;
     while(p != NULL) {
         conn_entry_t* next = p->next;
-        if ((time(NULL) - p->last_acticity / 1000 > max_age) && (clean_spares || !p->spare)) {
-            if (p->spare) {
-                printf("<6> removing stale spare tunnel from %s:%d\n", inet_ntoa(p->addr_tunnel.sin_addr), p->addr_tunnel.sin_port);
-            } else {
-                printf("<6> removing stale tunnel for %s:%d\n", inet_ntoa(p->addr_client.sin_addr), p->addr_client.sin_port);
-            }
+        if ((millisec() - p->last_acticity > max_age * 1000) && (clean_spares || !p->spare)) {
+            printf("<6> removing stale tunnel\n";
             conn_table_remove(p);
         }
         p = next;
     }
 }
-
