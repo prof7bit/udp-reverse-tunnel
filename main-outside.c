@@ -59,7 +59,7 @@ void run_outside(unsigned port) {
                     conn_print_numbers();
                 }
                 conn->last_acticity = millisec();
-                conn_table_clean(KEEPALIVE_SECONDS + 5); // periodic cleaning of stale entries
+                conn_table_clean(KEEPALIVE_SECONDS + 5, true); // periodic cleaning of stale entries
                 continue;
             }
         }
