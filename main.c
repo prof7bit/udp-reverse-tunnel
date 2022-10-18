@@ -26,7 +26,7 @@
 
 static void run_outside(unsigned port) {
     int sockfd;
-    char buffer[BUF_SIZE + 1];
+    char buffer[BUF_SIZE];
     struct sockaddr_in addr_own = {0};
     struct sockaddr_in addr_incoming = {0};
 
@@ -120,7 +120,7 @@ static void run_inside(char* outsude_host, int outside_port, char* service_host,
     struct sockaddr_in addr_incoming = {0};
     struct hostent* he;
     socklen_t len_addr = sizeof(struct sockaddr_in);
-    char buffer[BUF_SIZE + 1];
+    char buffer[BUF_SIZE];
 
     printf("<6> UDP tunnel inside agent\n");
     printf("<6> building tunnels to outside agent at %s, port %d\n", outsude_host, outside_port);
