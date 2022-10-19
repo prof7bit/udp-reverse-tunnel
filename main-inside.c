@@ -63,16 +63,20 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
         while (e) {
             if (e->sock_service) {
                 e->sock_service_pollidx = idx;
-                pfds[idx++].fd = e->sock_service;
+                pfds[idx].events = POLLIN;
+                pfds[idx].fd = e->sock_service;
+                ++idx;
             }
             if (e->sock_tunnel) {
                 e->sock_tunnel_pollidx = idx;
-                pfds[idx++].fd = e->sock_tunnel;
+                pfds[idx].events = POLLIN;
+                pfds[idx].fd = e->sock_tunnel;
+                ++idx;
             }
             e = e->next;
         }
 
-        if (poll(pfds, count_sock, 100) < 1) {
+        if (poll(pfds, count_sock, 100) < 0) {
             perror("<3> poll returned error");
             exit(EXIT_FAILURE);
         };
