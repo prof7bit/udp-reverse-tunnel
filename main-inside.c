@@ -91,18 +91,17 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
             conn_entry_t* e = conn_table;
             while (e) {
 
-                // check all the sockets in the con table (these are all facing towards the service host)
+                // check all the sockets facing towards the service host
                 if (e->sock_service > 0) {
                     if (FD_ISSET(e->sock_service, &sock_set)) {
                         nbytes = recvfrom(e->sock_service, buffer, BUF_SIZE, 0, (struct sockaddr*) &addr_incoming, &len_addr);
                         if (e->sock_tunnel > 0) {
                             sendto(e->sock_tunnel, buffer, nbytes, 0, (struct sockaddr*)&addr_outside, len_addr);
-                            e->last_acticity = millisec();
                         }
                     }
                 }
 
-                // check all the sockets that are facing towards the tunnel outside agent
+                // check all the sockets facing towards the tunnel outside agent
                 if (e->sock_tunnel > 0) {
                     if (FD_ISSET(e->sock_tunnel, &sock_set)) {
                         nbytes = recvfrom(e->sock_tunnel, buffer, BUF_SIZE, 0, (struct sockaddr*) &addr_incoming, &len_addr);
