@@ -10,7 +10,9 @@ struct conn_entry {
     struct sockaddr_in addr_client;
     struct sockaddr_in addr_tunnel;
     int sock_service;
+    int sock_service_pollidx;
     int sock_tunnel;
+    int sock_tunnel_pollidx;
     conn_entry_t* prev;
     conn_entry_t* next;
     bool spare;
@@ -28,6 +30,7 @@ conn_entry_t* conn_table_find_next_spare(void);
 void conn_table_clean(unsigned max_age, bool clean_spares);
 unsigned conn_count();
 unsigned conn_spare_count();
+unsigned conn_socket_count();
 void conn_print_numbers();
 
 #endif // CONNLIST_H

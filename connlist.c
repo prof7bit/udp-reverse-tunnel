@@ -152,6 +152,21 @@ unsigned conn_spare_count() {
     return cnt;
 }
 
+unsigned conn_socket_count() {
+    conn_entry_t* e = conn_table;
+    unsigned cnt = 0;
+    while(e) {
+        if (e->sock_service) {
+            ++cnt;
+        }
+        if (e->sock_tunnel) {
+            ++cnt;
+        }
+        e = e->next;
+    }
+    return cnt;
+}
+
 void conn_print_numbers() {
     unsigned spare = conn_spare_count();
     printf("<6> Total: %d, active: %d, spare: %d\n", count, count - spare, spare);

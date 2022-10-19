@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <sys/poll.h>
 
 #include "connlist.h"
 #include "mac.h"
@@ -11,17 +12,15 @@
 #include "defines.h"
 
 void run_inside(char* outsude_host, int outside_port, char* service_host, int service_port) {
-    fd_set sock_set;
-    struct timeval tv;
-    int fd_max;
-    int result;
     size_t nbytes;
     struct sockaddr_in addr_outside = {0};
     struct sockaddr_in addr_service = {0};
     struct sockaddr_in addr_incoming = {0};
     struct hostent* he;
     socklen_t len_addr = sizeof(struct sockaddr_in);
+    struct pollfd* pfds = NULL;
     char buffer[BUF_SIZE];
+
 
     printf("<6> UDP tunnel inside agent\n");
     printf("<6> building tunnels to outside agent at %s, port %d\n", outsude_host, outside_port);
@@ -51,93 +50,82 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
     spare_conn->spare = true;
     spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
     if (spare_conn->sock_tunnel < 0) {
-        printf("<3> could not create new UDP socket for tunnel\n");
+        perror("<3> could not create new UDP socket for tunnel");
         exit(EXIT_FAILURE);
     }
 
-    #define FD_SET2(fd) {\
-        FD_SET(fd, &sock_set);\
-        if (fd > fd_max) {\
-            fd_max = fd;\
-        }\
-    }
-
     while ("my guitar gently weeps") {
-        fd_max = 0;
-        FD_ZERO(&sock_set);
+
+        int count_sock = conn_socket_count();
+        pfds = realloc(pfds, count_sock * sizeof(struct pollfd));
+        int idx = 0;
         conn_entry_t* e = conn_table;
         while (e) {
-            if (e->sock_service > 0) {
-                FD_SET2(e->sock_service);
+            if (e->sock_service) {
+                e->sock_service_pollidx = idx;
+                pfds[idx++].fd = e->sock_service;
             }
-            if (e->sock_tunnel > 0) {
-                FD_SET2(e->sock_tunnel);
+            if (e->sock_tunnel) {
+                e->sock_tunnel_pollidx = idx;
+                pfds[idx++].fd = e->sock_tunnel;
             }
             e = e->next;
         }
-        tv.tv_sec = 0;
-        tv.tv_usec = 100 * 1000;
-        result = select(fd_max + 1, &sock_set, NULL, NULL, &tv);
 
-        if (result < 0) {
-            perror("<3> select error");
-        }
+        if (poll(pfds, count_sock, 100) < 1) {
+            perror("<3> poll returned error");
+            exit(EXIT_FAILURE);
+        };
 
-        else if (result == 0) {
-            // timeout
-        }
+        e = conn_table;
+        while (e) {
 
-        else {
-            conn_entry_t* e = conn_table;
-            while (e) {
-
-                // check all the sockets facing towards the service host
-                if (e->sock_service > 0) {
-                    if (FD_ISSET(e->sock_service, &sock_set)) {
-                        nbytes = recvfrom(e->sock_service, buffer, BUF_SIZE, 0, (struct sockaddr*) &addr_incoming, &len_addr);
-                        if (e->sock_tunnel > 0) {
-                            sendto(e->sock_tunnel, buffer, nbytes, 0, (struct sockaddr*)&addr_outside, len_addr);
-                        }
+            // check all the sockets facing towards the service host
+            if (e->sock_service > 0) {
+                if (pfds[e->sock_service_pollidx].revents & POLLIN) {
+                    nbytes = recvfrom(e->sock_service, buffer, BUF_SIZE, 0, (struct sockaddr*) &addr_incoming, &len_addr);
+                    if (e->sock_tunnel > 0) {
+                        sendto(e->sock_tunnel, buffer, nbytes, 0, (struct sockaddr*)&addr_outside, len_addr);
                     }
                 }
-
-                // check all the sockets facing towards the tunnel outside agent
-                if (e->sock_tunnel > 0) {
-                    if (FD_ISSET(e->sock_tunnel, &sock_set)) {
-                        nbytes = recvfrom(e->sock_tunnel, buffer, BUF_SIZE, 0, (struct sockaddr*) &addr_incoming, &len_addr);
-                        if (e->spare) {
-                            // this came in on one of the spare connections
-                            // remove the spare status and create a socket to use it
-                            printf("<6> new client data arrived on spare tunnel, creating socket for it\n");
-                            e->spare = false;
-                            e->sock_service = socket(AF_INET, SOCK_DGRAM, 0);
-                            if (e->sock_service < 0) {
-                                printf("<3> could not create new UDP socket for service\n");
-                                exit(EXIT_FAILURE);
-                            }
-
-                            // and immediately create another new spare connection
-                            printf("<6> creating new outgoing spare tunnel\n");
-                            conn_entry_t* spare_conn = conn_table_insert();
-                            spare_conn->spare = true;
-                            spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
-                            if (e->sock_tunnel < 0) {
-                                printf("<3> could not create UDP socket for new spare connectionl\n");
-                                exit(EXIT_FAILURE);
-                            }
-
-                            conn_print_numbers();
-                        }
-
-                        if (e->sock_service > 0) {
-                            sendto(e->sock_service, buffer, nbytes, 0, (struct sockaddr*)&addr_service, len_addr);
-                            e->last_acticity = millisec();
-                        }
-                    }
-                }
-
-                e = e->next;
             }
+
+            // check all the sockets facing towards the tunnel outside agent
+            if (e->sock_tunnel > 0) {
+                if (pfds[e->sock_tunnel_pollidx].revents & POLLIN) {
+                    nbytes = recvfrom(e->sock_tunnel, buffer, BUF_SIZE, 0, (struct sockaddr*) &addr_incoming, &len_addr);
+                    if (e->spare) {
+                        // this came in on one of the spare connections
+                        // remove the spare status and create a socket to use it
+                        printf("<6> new client data arrived on spare tunnel, creating socket for it\n");
+                        e->spare = false;
+                        e->sock_service = socket(AF_INET, SOCK_DGRAM, 0);
+                        if (e->sock_service < 0) {
+                            printf("<3> could not create new UDP socket for service\n");
+                            exit(EXIT_FAILURE);
+                        }
+
+                        // and immediately create another new spare connection
+                        printf("<6> creating new outgoing spare tunnel\n");
+                        conn_entry_t* spare_conn = conn_table_insert();
+                        spare_conn->spare = true;
+                        spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
+                        if (e->sock_tunnel < 0) {
+                            printf("<3> could not create UDP socket for new spare connectionl\n");
+                            exit(EXIT_FAILURE);
+                        }
+
+                        conn_print_numbers();
+                    }
+
+                    if (e->sock_service > 0) {
+                        sendto(e->sock_service, buffer, nbytes, 0, (struct sockaddr*)&addr_service, len_addr);
+                        e->last_acticity = millisec();
+                    }
+                }
+            }
+
+            e = e->next;
         }
 
         // in regular intervals we need to send a keepalive datagram to the outside agent. This has the
