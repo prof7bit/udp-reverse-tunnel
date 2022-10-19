@@ -15,7 +15,7 @@ void run_outside(unsigned port) {
     struct sockaddr_in addr_own = {0};
     struct sockaddr_in addr_incoming = {0};
 
-    printf("<6> UDP tunnel outside agent\n");
+    printf("<6> UDP tunnel outside agent v" VERSION_STR "\n");
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("<3> socket creation failed");

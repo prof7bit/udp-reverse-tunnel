@@ -22,7 +22,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
     char buffer[BUF_SIZE];
 
 
-    printf("<6> UDP tunnel inside agent\n");
+    printf("<6> UDP tunnel inside agent v" VERSION_STR "\n");
     printf("<6> building tunnels to outside agent at %s, port %d\n", outsude_host, outside_port);
     printf("<6> forwarding incomimg UDP to %s, port %d\n", service_host, service_port);
 

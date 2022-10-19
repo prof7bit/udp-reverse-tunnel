@@ -4,10 +4,13 @@ listen      ?= 51820
 prefix      ?= /usr/local
 
 name        = udp-tunnel
+version     = 1.2
 objs        = main.o connlist.o args.o sha-256.o mac.o misc.o main-inside.o main-outside.o
 deps        = $(patsubst %.o,%.d,$(objs))
-cflags      = -O3 -flto -Wall -Wextra
+CFLAGS      = -O3 -flto -Wall -Wextra
 unit_dir    = /etc/systemd/system
+
+CFLAGS     += -DVERSION=$(version)
 
 all: $(name)
 
@@ -38,11 +41,11 @@ uninstall:
 
 # compile the modules
 %.o: %.c $(HEADERS)
-	$(CC) -MMD $(cflags) -c $< -o $@
+	$(CC) -MMD $(CFLAGS) -c $< -o $@
 
 # link the executable
 $(name): $(objs)
-	$(CC) -o $@ $(cflags) $(LFLAGS) $^
+	$(CC) -o $@ $(CFLAGS) $(LFLAGS) $^
 
 # also depend on changes in the makefile
 $(objs): Makefile

@@ -5,5 +5,9 @@
 #define BUF_SIZE                0xffff
 #define KEEPALIVE_SECONDS       10
 
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#define VERSION_STR TOSTRING(VERSION)  // passed by compiler -DVERSION option
+
 #endif
 

@@ -2,7 +2,9 @@
 #include <argp.h>
 #include <stdlib.h>
 
-const char *argp_program_version = "udp-tunnel-1.1";
+#include "defines.h"
+
+const char *argp_program_version = "udp-tunnel-" VERSION_STR;
 const char *argp_program_bug_address = "<prof7bit@gmail.com>";
 static char doc[] = " \
 creates a reverse UDP tunnel for an UDP srvice behind NAT\n\n \
