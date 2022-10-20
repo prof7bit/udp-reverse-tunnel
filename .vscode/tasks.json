@@ -1,0 +1,19 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "make all",
+			"command": "make all",
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+		}
+	],
+	"presentation": {
+		"reveal": "always",
+		"revealProblems": "onProblem",
+		"showReuseMessage" : false,
+	}
+}
