@@ -40,7 +40,7 @@ uninstall:
 	systemctl daemon-reload
 
 # compile the modules
-%.o: %.c $(HEADERS)
+%.o: %.c
 	$(CC) -MMD $(CFLAGS) -c $< -o $@
 
 # link the executable
