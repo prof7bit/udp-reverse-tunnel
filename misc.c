@@ -26,7 +26,7 @@ void print(log_level_t level, char* fmt, ...) {
     printf("<%d>", level);
     va_list arglist;
     va_start(arglist, fmt);
-    printf(fmt, arglist);
+    vprintf(fmt, arglist);
     puts("");
     fflush(stdout);
 }
