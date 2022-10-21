@@ -5,6 +5,7 @@
 
 typedef enum {
     LOG_ERROR = 3,
+    LOG_WARN = 4,
     LOG_INFO = 6,
     LOG_DEBUG = 7
 } log_level_t;

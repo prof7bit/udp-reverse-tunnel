@@ -125,7 +125,7 @@ void conn_table_clean(unsigned max_age, bool clean_spares) {
     while(p != NULL) {
         conn_entry_t* next = p->next;
         if ((millisec() - p->last_acticity > max_age * 1000) && (clean_spares || !p->spare)) {
-            printf("<6> removing connection\n");
+            print(LOG_INFO, "removing connection");
             conn_table_remove(p);
             changed = true;
         }
@@ -169,5 +169,5 @@ unsigned conn_socket_count() {
 
 void conn_print_numbers() {
     unsigned spare = conn_spare_count();
-    printf("<6> Total: %d, active: %d, spare: %d\n", count, count - spare, spare);
+    print(LOG_INFO, "Total: %d, active: %d, spare: %d", count, count - spare, spare);
 }

@@ -15,7 +15,7 @@ void run_outside(unsigned port) {
     struct sockaddr_in addr_own = {0};
     struct sockaddr_in addr_incoming = {0};
 
-    printf("<6> UDP tunnel outside agent v" VERSION_STR "\n");
+    print(LOG_INFO, "UDP tunnel outside agent v" VERSION_STR);
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
         perror("<3> socket creation failed");
@@ -31,7 +31,7 @@ void run_outside(unsigned port) {
         exit(EXIT_FAILURE);
     }
 
-    printf("<6> listening on port %d\n", port);
+    print(LOG_INFO, "listening on port %d", port);
 
     socklen_t len_addr = sizeof(addr_incoming);
     size_t nbytes;
@@ -52,7 +52,7 @@ void run_outside(unsigned port) {
                 // From this moment on we know where to forward the client datagrams.
                 conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
                 if (!conn) {
-                    printf("<6> new incoming reverse tunnel from: %s:%d\n", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                    print(LOG_INFO, "new incoming reverse tunnel from: %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
                     conn = conn_table_insert();
                     memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
                     conn->spare = true;
@@ -75,7 +75,7 @@ void run_outside(unsigned port) {
         // This is not from one of the known tunnel addresses, so it must be from a client.
         conn = conn_table_find_client_address(&addr_incoming);
         if (conn == NULL) {
-            printf("<6> new client conection from %s:%d\n", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+            print(LOG_INFO, "new client conection from %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
 
             // now try to find a spare tunnel for this new client and activate it
             conn = conn_table_find_next_spare();
@@ -89,7 +89,7 @@ void run_outside(unsigned port) {
         if (conn) {
             sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
         } else {
-            printf("<4> could not find tunnel connection for client, dropping package\n");
+            print(LOG_WARN, "could not find tunnel connection for client, dropping package");
         }
     }
 }

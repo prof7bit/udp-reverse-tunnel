@@ -46,7 +46,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
 
     // we start out with one unused spare tunnel
     conn_entry_t* spare_conn = conn_table_insert();
-    print(LOG_ERROR, "creating initial outgoing tunnel");
+    print(LOG_INFO, "creating initial outgoing tunnel");
     spare_conn->spare = true;
     spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
     if (spare_conn->sock_tunnel < 0) {
