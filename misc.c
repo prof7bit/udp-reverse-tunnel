@@ -27,6 +27,7 @@ void print(log_level_t level, char* fmt, ...) {
     va_list arglist;
     va_start(arglist, fmt);
     vprintf(fmt, arglist);
+    va_end(arglist);
     puts("");
     fflush(stdout);
 }
