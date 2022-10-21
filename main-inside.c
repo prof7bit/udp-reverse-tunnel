@@ -22,9 +22,9 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
     char buffer[BUF_SIZE];
 
 
-    printf("<6> UDP tunnel inside agent v" VERSION_STR "\n");
-    printf("<6> building tunnels to outside agent at %s, port %d\n", outsude_host, outside_port);
-    printf("<6> forwarding incomimg UDP to %s, port %d\n", service_host, service_port);
+    print(LOG_INFO, "UDP tunnel inside agent v" VERSION_STR);
+    print(LOG_INFO, "building tunnels to outside agent at %s, port %d", outsude_host, outside_port);
+    print(LOG_INFO, "forwarding incomimg UDP to %s, port %d", service_host, service_port);
 
     if ((he = gethostbyname(outsude_host)) == NULL) {
         perror("<3> outside host name could not be resolved");
@@ -46,7 +46,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
 
     // we start out with one unused spare tunnel
     conn_entry_t* spare_conn = conn_table_insert();
-    printf("<6> creating initial outgoing tunnel\n");
+    print(LOG_ERROR, "creating initial outgoing tunnel");
     spare_conn->spare = true;
     spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
     if (spare_conn->sock_tunnel < 0) {
@@ -101,21 +101,21 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
                     if (e->spare) {
                         // this came in on one of the spare connections
                         // remove the spare status and create a socket to use it
-                        printf("<6> new client data arrived on spare tunnel, creating socket for it\n");
+                        print(LOG_INFO, "new client data arrived on spare tunnel, creating socket for it");
                         e->spare = false;
                         e->sock_service = socket(AF_INET, SOCK_DGRAM, 0);
                         if (e->sock_service < 0) {
-                            printf("<3> could not create new UDP socket for service\n");
+                            print(LOG_ERROR, "could not create new UDP socket for service");
                             exit(EXIT_FAILURE);
                         }
 
                         // and immediately create another new spare connection
-                        printf("<6> creating new outgoing spare tunnel\n");
+                        print(LOG_INFO, "creating new outgoing spare tunnel");
                         conn_entry_t* spare_conn = conn_table_insert();
                         spare_conn->spare = true;
                         spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
                         if (e->sock_tunnel < 0) {
-                            printf("<3> could not create UDP socket for new spare connectionl\n");
+                            print(LOG_ERROR, "could not create UDP socket for new spare connectionl");
                             exit(EXIT_FAILURE);
                         }
 
