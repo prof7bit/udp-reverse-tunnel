@@ -48,5 +48,4 @@ void print_e(log_level_t level, char* fmt, ...) {
     } else {
         fprintf(stderr, "\n");
     }
-    
 }

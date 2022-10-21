@@ -17,7 +17,6 @@
  * main program entry point
  */
 int main(int argc, char *args[]) {
-    setbuf(stdout, NULL);
     args_parsed_t parsed = args_parse(argc, args);
     if (parsed.secret) {
         mac_init(parsed.secret, strlen(parsed.secret));
