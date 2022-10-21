@@ -18,7 +18,7 @@ void run_outside(unsigned port) {
     print(LOG_INFO, "UDP tunnel outside agent v" VERSION_STR);
 
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("<3> socket creation failed");
+        print_e(LOG_ERROR, "socket creation failed");
         exit(EXIT_FAILURE);
     }
 
@@ -27,7 +27,7 @@ void run_outside(unsigned port) {
     addr_own.sin_port = htons(port);
 
     if (bind(sockfd, (const struct sockaddr *)&addr_own, sizeof(addr_own)) < 0) {
-        perror("<3> bind failed");
+        print_e(LOG_ERROR, "bind failed");
         exit(EXIT_FAILURE);
     }
 

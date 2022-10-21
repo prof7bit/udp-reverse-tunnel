@@ -27,17 +27,16 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
     print(LOG_INFO, "forwarding incomimg UDP to %s, port %d", service_host, service_port);
 
     if ((he = gethostbyname(outsude_host)) == NULL) {
-        perror("<3> outside host name could not be resolved");
+        print_e(LOG_ERROR, "outside host name could not be resolved");
         exit(EXIT_FAILURE);
     }
-    print_e(LOG_DEBUG, "outside host name resolved: %s", inet_ntoa(addr_incoming.sin_addr));
 
     memcpy(&addr_outside.sin_addr, he->h_addr_list[0], he->h_length);
     addr_outside.sin_family = AF_INET;
     addr_outside.sin_port = htons(outside_port);
 
     if ((he = gethostbyname(service_host)) == NULL) {
-        perror("<3> srvice host name could not be resolved");
+        print_e(LOG_ERROR, "srvice host name could not be resolved");
         exit(EXIT_FAILURE);
     }
 
@@ -51,7 +50,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
     spare_conn->spare = true;
     spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
     if (spare_conn->sock_tunnel < 0) {
-        perror("<3> could not create new UDP socket for tunnel");
+        print_e(LOG_ERROR, "could not create new UDP socket for tunnel");
         exit(EXIT_FAILURE);
     }
 
@@ -78,7 +77,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
         }
 
         if (poll(pfds, count_sock, 100) < 0) {
-            perror("<3> poll returned error");
+            print_e(LOG_ERROR, "poll returned error");
             exit(EXIT_FAILURE);
         };
 
@@ -106,7 +105,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
                         e->spare = false;
                         e->sock_service = socket(AF_INET, SOCK_DGRAM, 0);
                         if (e->sock_service < 0) {
-                            print(LOG_ERROR, "could not create new UDP socket for service");
+                            print_e(LOG_ERROR, "could not create new UDP socket for service");
                             exit(EXIT_FAILURE);
                         }
 
@@ -116,7 +115,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
                         spare_conn->spare = true;
                         spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
                         if (e->sock_tunnel < 0) {
-                            print(LOG_ERROR, "could not create UDP socket for new spare connectionl");
+                            print_e(LOG_ERROR, "could not create UDP socket for new spare connectionl");
                             exit(EXIT_FAILURE);
                         }
 

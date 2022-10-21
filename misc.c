@@ -3,6 +3,8 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <errno.h>
+#include <string.h>
 
 /**
  * return timestamp in milliseconds
@@ -32,12 +34,19 @@ void print(log_level_t level, char* fmt, ...) {
     fflush(stdout);
 }
 
+/**
+ * like print() but appends errno and strerror to the output
+ */
 void print_e(log_level_t level, char* fmt, ...) {
-    char txt[255];
+    fprintf(stderr, "<%d>", level);
     va_list arglist;
     va_start(arglist, fmt);
-    vsnprintf(txt, sizeof(txt), fmt, arglist);
+    vfprintf(stderr, fmt, arglist);
     va_end(arglist);
-    fprintf(stderr, "<%d>", level);
-    perror(txt);
+    if (errno) {
+        fprintf(stderr, ": (%d) %s\n", errno, strerror(errno));
+    } else {
+        fprintf(stderr, "\n");
+    }
+    
 }
