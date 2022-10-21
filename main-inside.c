@@ -30,6 +30,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
         perror("<3> outside host name could not be resolved");
         exit(EXIT_FAILURE);
     }
+    print_e(LOG_DEBUG, "outside host name resolved: %s", inet_ntoa(addr_incoming.sin_addr));
 
     memcpy(&addr_outside.sin_addr, he->h_addr_list[0], he->h_length);
     addr_outside.sin_family = AF_INET;

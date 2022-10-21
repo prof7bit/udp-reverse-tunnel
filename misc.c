@@ -31,3 +31,13 @@ void print(log_level_t level, char* fmt, ...) {
     puts("");
     fflush(stdout);
 }
+
+void print_e(log_level_t level, char* fmt, ...) {
+    char txt[255];
+    va_list arglist;
+    va_start(arglist, fmt);
+    vsnprintf(txt, sizeof(txt), fmt, arglist);
+    va_end(arglist);
+    fprintf(stderr, "<%d>", level);
+    perror(txt);
+}
