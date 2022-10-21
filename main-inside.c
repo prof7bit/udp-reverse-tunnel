@@ -27,7 +27,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
     print(LOG_INFO, "forwarding incomimg UDP to %s, port %d", service_host, service_port);
 
     if ((he = gethostbyname(outsude_host)) == NULL) {
-        print_e(LOG_ERROR, "outside host name could not be resolved");
+        print_e(LOG_ERROR, "outside host name '%s' could not be resolved", outsude_host);
         exit(EXIT_FAILURE);
     }
 
@@ -36,7 +36,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
     addr_outside.sin_port = htons(outside_port);
 
     if ((he = gethostbyname(service_host)) == NULL) {
-        print_e(LOG_ERROR, "srvice host name could not be resolved");
+        print_e(LOG_ERROR, "srvice host name '%s' could not be resolved", service_host);
         exit(EXIT_FAILURE);
     }
 

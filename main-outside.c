@@ -27,7 +27,7 @@ void run_outside(unsigned port) {
     addr_own.sin_port = htons(port);
 
     if (bind(sockfd, (const struct sockaddr *)&addr_own, sizeof(addr_own)) < 0) {
-        print_e(LOG_ERROR, "bind failed");
+        print_e(LOG_ERROR, "binding to port %d failed", port);
         exit(EXIT_FAILURE);
     }
 
