@@ -44,7 +44,6 @@ void run_outside(args_parsed_t args) {
     while ("my guitar gently weeps") {
         ssize_t nbytes = recvfrom(sockfd, buffer, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &addr_incoming, &len_addr);
         if (nbytes > 0) {
-            print(LOG_DEBUG, "nbytes=%d", nbytes);
             // the keepalive datagram from the inside agent is a 40 byte message authentication code
             // for an empty message with a strictly increasing nonce, each code can only be used
             // exactly once) to prevent replay attacks. This datagram is used to learn the public
