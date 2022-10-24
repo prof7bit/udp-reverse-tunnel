@@ -12,7 +12,7 @@
 #include "defines.h"
 
 void run_inside(args_parsed_t args) {
-    size_t nbytes;
+    ssize_t nbytes;
     struct sockaddr_in addr_outside = {0};
     struct sockaddr_in addr_service = {0};
     struct sockaddr_in addr_incoming = {0};

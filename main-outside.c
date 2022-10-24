@@ -14,6 +14,7 @@ void run_outside(args_parsed_t args) {
     char buffer[BUF_SIZE];
     struct sockaddr_in addr_own = {0};
     struct sockaddr_in addr_incoming = {0};
+    uint64_t time_last_cleanup = 0;
 
     print(LOG_INFO, "UDP tunnel outside agent v" VERSION_STR);
 
@@ -21,6 +22,11 @@ void run_outside(args_parsed_t args) {
         print_e(LOG_ERROR, "socket creation failed");
         exit(EXIT_FAILURE);
     }
+
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 500 * 1000;
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);    
 
     addr_own.sin_family = AF_INET;
     addr_own.sin_addr.s_addr = INADDR_ANY;
@@ -34,62 +40,68 @@ void run_outside(args_parsed_t args) {
     print(LOG_INFO, "listening on port %d", args.listenport);
 
     socklen_t len_addr = sizeof(addr_incoming);
-    size_t nbytes;
 
     while ("my guitar gently weeps") {
-        nbytes = recvfrom(sockfd, buffer, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &addr_incoming, &len_addr);
-
-        // the keepalive datagram from the inside agent is a 40 byte message authentication code
-        // for an empty message with a strictly increasing nonce, each code can only be used
-        // exactly once) to prevent replay attacks. This datagram is used to learn the public
-        // address and port of the inside agent.
-        if (nbytes == sizeof(mac_t)) {
-            mac_t mac;
-            memcpy(&mac, buffer, sizeof(mac_t));
-            if (mac_test(NULL, 0, mac)) {
-                // We could successfully verify the authentication code, we know this datagram
-                // originates from the inside agent and we can store the source address.
-                // From this moment on we know where to forward the client datagrams.
-                conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
-                if (!conn) {
-                    print(LOG_INFO, "new incoming reverse tunnel from: %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
-                    conn = conn_table_insert();
-                    memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
-                    conn->spare = true;
-                    conn_print_numbers();
+        ssize_t nbytes = recvfrom(sockfd, buffer, BUF_SIZE, MSG_WAITALL, (struct sockaddr*) &addr_incoming, &len_addr);
+        if (nbytes > 0) {
+            print(LOG_DEBUG, "nbytes=%d", nbytes);
+            // the keepalive datagram from the inside agent is a 40 byte message authentication code
+            // for an empty message with a strictly increasing nonce, each code can only be used
+            // exactly once) to prevent replay attacks. This datagram is used to learn the public
+            // address and port of the inside agent.
+            if (nbytes == sizeof(mac_t)) {
+                mac_t mac;
+                memcpy(&mac, buffer, sizeof(mac_t));
+                if (mac_test(NULL, 0, mac)) {
+                    // We could successfully verify the authentication code, we know this datagram
+                    // originates from the inside agent and we can store the source address.
+                    // From this moment on we know where to forward the client datagrams.
+                    conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
+                    if (!conn) {
+                        print(LOG_INFO, "new incoming reverse tunnel from: %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                        conn = conn_table_insert();
+                        memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
+                        conn->spare = true;
+                        conn_print_numbers();
+                    }
+                    conn->last_acticity = millisec();
+                    continue;
                 }
-                conn->last_acticity = millisec();
-                conn_table_clean(args.keepalive + 5, true); // periodic cleaning of stale entries
+            }
+
+            // Test whether this originates from the inside agent. All possible inside agent
+            // tunnel addresses must be present in our connection table.
+            conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
+            if (conn) {
+                sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_client, len_addr);
                 continue;
             }
-        }
 
-        // Test whether this originates from the inside agent. All possible inside agent
-        // tunnel addresses must be present in our connection table.
-        conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
-        if (conn) {
-            sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_client, len_addr);
-            continue;
-        }
+            // This is not from one of the known tunnel addresses, so it must be from a client.
+            conn = conn_table_find_client_address(&addr_incoming);
+            if (conn == NULL) {
+                print(LOG_INFO, "new client conection from %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
 
-        // This is not from one of the known tunnel addresses, so it must be from a client.
-        conn = conn_table_find_client_address(&addr_incoming);
-        if (conn == NULL) {
-            print(LOG_INFO, "new client conection from %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                // now try to find a spare tunnel for this new client and activate it
+                conn = conn_table_find_next_spare();
+                if (conn) {
+                    conn->spare = false;
+                    memcpy(&conn->addr_client, &addr_incoming, len_addr);
+                }
+            }
 
-            // now try to find a spare tunnel for this new client and activate it
-            conn = conn_table_find_next_spare();
+            // if we have a tunnel conection for this client then we can forward it to the inside
             if (conn) {
-                conn->spare = false;
-                memcpy(&conn->addr_client, &addr_incoming, len_addr);
+                sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
+            } else {
+                print(LOG_WARN, "could not find tunnel connection for client, dropping package");
             }
         }
 
-        // if we have a tunnel conection for this client then we can forward it to the inside
-        if (conn) {
-            sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
-        } else {
-            print(LOG_WARN, "could not find tunnel connection for client, dropping package");
+        uint64_t ms = millisec();
+        if (ms - time_last_cleanup > 1000) {
+            time_last_cleanup = ms;
+            conn_table_clean(args.keepalive + 5, true); // periodic cleaning of stale entries
         }
     }
 }
