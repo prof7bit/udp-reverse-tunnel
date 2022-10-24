@@ -3,7 +3,6 @@
 
 #define CONN_LIFETIME_SECONDS   60
 #define BUF_SIZE                0xffff
-#define KEEPALIVE_SECONDS       10
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)

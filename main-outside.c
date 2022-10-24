@@ -9,7 +9,7 @@
 #include "misc.h"
 #include "defines.h"
 
-void run_outside(unsigned port) {
+void run_outside(args_parsed_t args) {
     int sockfd;
     char buffer[BUF_SIZE];
     struct sockaddr_in addr_own = {0};
@@ -24,14 +24,14 @@ void run_outside(unsigned port) {
 
     addr_own.sin_family = AF_INET;
     addr_own.sin_addr.s_addr = INADDR_ANY;
-    addr_own.sin_port = htons(port);
+    addr_own.sin_port = htons(args.listenport);
 
     if (bind(sockfd, (const struct sockaddr *)&addr_own, sizeof(addr_own)) < 0) {
-        print_e(LOG_ERROR, "binding to port %d failed", port);
+        print_e(LOG_ERROR, "binding to port %d failed", args.listenport);
         exit(EXIT_FAILURE);
     }
 
-    print(LOG_INFO, "listening on port %d", port);
+    print(LOG_INFO, "listening on port %d", args.listenport);
 
     socklen_t len_addr = sizeof(addr_incoming);
     size_t nbytes;
@@ -59,7 +59,7 @@ void run_outside(unsigned port) {
                     conn_print_numbers();
                 }
                 conn->last_acticity = millisec();
-                conn_table_clean(KEEPALIVE_SECONDS + 5, true); // periodic cleaning of stale entries
+                conn_table_clean(args.keepalive + 5, true); // periodic cleaning of stale entries
                 continue;
             }
         }

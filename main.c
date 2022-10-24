@@ -22,8 +22,8 @@ int main(int argc, char *args[]) {
         mac_init(parsed.secret, strlen(parsed.secret));
     }
     if (parsed.listenport) {
-        run_outside(parsed.listenport);
+        run_outside(parsed);
     } else {
-        run_inside(parsed.outside_host, parsed.outside_port, parsed.service_host, parsed.service_port);
+        run_inside(parsed);
     }
 }

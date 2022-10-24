@@ -2,14 +2,15 @@
 #define ARGS_H
 
 typedef struct {
-    int  listenport;
+    unsigned  listenport;
     char* service;
     char* outside;
     char *service_host;
-    int service_port;
+    unsigned service_port;
     char* outside_host;
-    int outside_port;
+    unsigned outside_port;
     char* secret;
+    unsigned keepalive;
 } args_parsed_t;
 
 args_parsed_t args_parse(int argc, char* args[]);

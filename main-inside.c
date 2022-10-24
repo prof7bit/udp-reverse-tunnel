@@ -11,7 +11,7 @@
 #include "misc.h"
 #include "defines.h"
 
-void run_inside(char* outsude_host, int outside_port, char* service_host, int service_port) {
+void run_inside(args_parsed_t args) {
     size_t nbytes;
     struct sockaddr_in addr_outside = {0};
     struct sockaddr_in addr_service = {0};
@@ -23,26 +23,26 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
 
 
     print(LOG_INFO, "UDP tunnel inside agent v" VERSION_STR);
-    print(LOG_INFO, "building tunnels to outside agent at %s, port %d", outsude_host, outside_port);
-    print(LOG_INFO, "forwarding incomimg UDP to %s, port %d", service_host, service_port);
+    print(LOG_INFO, "building tunnels to outside agent at %s, port %d", args.outside_host, args.outside_port);
+    print(LOG_INFO, "forwarding incomimg UDP to %s, port %d", args.service_host, args.service_port);
 
-    if ((he = gethostbyname(outsude_host)) == NULL) {
-        print_e(LOG_ERROR, "outside host name '%s' could not be resolved", outsude_host);
+    if ((he = gethostbyname(args.outside_host)) == NULL) {
+        print_e(LOG_ERROR, "outside host name '%s' could not be resolved", args.outside_host);
         exit(EXIT_FAILURE);
     }
 
     memcpy(&addr_outside.sin_addr, he->h_addr_list[0], he->h_length);
     addr_outside.sin_family = AF_INET;
-    addr_outside.sin_port = htons(outside_port);
+    addr_outside.sin_port = htons(args.outside_port);
 
-    if ((he = gethostbyname(service_host)) == NULL) {
-        print_e(LOG_ERROR, "srvice host name '%s' could not be resolved", service_host);
+    if ((he = gethostbyname(args.service_host)) == NULL) {
+        print_e(LOG_ERROR, "srvice host name '%s' could not be resolved", args.service_host);
         exit(EXIT_FAILURE);
     }
 
     memcpy(&addr_service.sin_addr, he->h_addr_list[0], he->h_length);
     addr_service.sin_family = AF_INET;
-    addr_service.sin_port = htons(service_port);
+    addr_service.sin_port = htons(args.service_port);
 
     // we start out with one unused spare tunnel
     conn_entry_t* spare_conn = conn_table_insert();
@@ -139,7 +139,7 @@ void run_inside(char* outsude_host, int outside_port, char* service_host, int se
         uint64_t ms = millisec();
         while (e) {
             if (e->sock_tunnel > 0) {
-                if (ms - e->last_keepalive > KEEPALIVE_SECONDS * 1000) {
+                if (ms - e->last_keepalive > args.keepalive * 1000) {
                     e->last_keepalive = ms;
 
                     // the keepalive datagram is a 40 byte message authentication code, based on the sha-256 over

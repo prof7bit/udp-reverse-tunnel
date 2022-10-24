@@ -55,9 +55,17 @@ static struct argp_option options[] = {
         .group = 3,
         .doc = "optional shared password to prevent spoofing"
     },
+    {
+        .name = "keepalive",
+        .arg = "seconds",
+        .key = 't',
+        .group = 3,
+        .doc = "keepalive interval in seconds (default 25, must be the same on boths sides)"
+    },
 
     {0}
-};
+};    
+
 
 static error_t parse_opt(int key, char *arg, struct argp_state *state){
 
@@ -84,6 +92,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state){
 
         default:
             return ARGP_ERR_UNKNOWN;
+
+        case 't':
+            parsed->keepalive = strtoul(arg, NULL, 10);
+            break;
     }
 
     return 0;
@@ -108,6 +120,7 @@ args_parsed_t args_parse(int argc, char* args[]) {
     parsed.service = NULL;
     parsed.outside = NULL;
     parsed.secret = NULL;
+    parsed.keepalive = 25;
     argp_parse(&argp, argc, args, 0, 0, &parsed);
 
     if ((parsed.listenport > 0) && (parsed.outside != NULL)) {
