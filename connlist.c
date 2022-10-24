@@ -68,7 +68,7 @@ void conn_table_remove(conn_entry_t* entry) {
  */
 conn_entry_t* conn_table_find_client_address(struct sockaddr_in* addr) {
     conn_entry_t* p = conn_table;
-    while(p != NULL) {
+    while (p != NULL) {
         if (memcmp(&p->addr_client, addr, sizeof(struct sockaddr_in)) == 0) {
             return p;
         }
@@ -87,7 +87,7 @@ conn_entry_t* conn_table_find_client_address(struct sockaddr_in* addr) {
  */
 conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr) {
     conn_entry_t* p = conn_table;
-    while(p != NULL) {
+    while (p != NULL) {
         if (memcmp(&p->addr_tunnel, addr, sizeof(struct sockaddr_in)) == 0) {
             return p;
         }
@@ -102,10 +102,10 @@ conn_entry_t* conn_table_find_tunnel_address(struct sockaddr_in* addr) {
  */
 conn_entry_t* conn_table_find_next_spare(void) {
     conn_entry_t* p = conn_table;
-    while(p != NULL) {
-            if (p->spare) {
-                return p;
-            }
+    while (p != NULL) {
+        if (p->spare) {
+            return p;
+        }
         p = p->next;
     }
     return NULL;
@@ -120,16 +120,17 @@ conn_entry_t* conn_table_find_next_spare(void) {
  * @param clean_spares should spare entries also be cleaned
  */
 void conn_table_clean(unsigned max_age, bool clean_spares) {
-    conn_entry_t* p = conn_table;
+    conn_entry_t* e = conn_table;
     bool changed = false;
-    while(p != NULL) {
-        conn_entry_t* next = p->next;
-        if ((millisec() - p->last_acticity > max_age * 1000) && (clean_spares || !p->spare)) {
+    uint64_t time = millisec();
+    while (e != NULL) {
+        conn_entry_t* next = e->next;
+        if ((time - e->last_acticity > max_age * 1000) && (clean_spares || !e->spare)) {
             print(LOG_INFO, "removing connection");
-            conn_table_remove(p);
+            conn_table_remove(e);
             changed = true;
         }
-        p = next;
+        e = next;
     }
     if (changed) {
         conn_print_numbers();
@@ -143,7 +144,7 @@ unsigned conn_count() {
 unsigned conn_spare_count() {
     conn_entry_t* e = conn_table;
     unsigned cnt = 0;
-    while(e) {
+    while (e) {
         if (e->spare) {
             ++cnt;
         }
@@ -155,7 +156,7 @@ unsigned conn_spare_count() {
 unsigned conn_socket_count() {
     conn_entry_t* e = conn_table;
     unsigned cnt = 0;
-    while(e) {
+    while (e) {
         if (e->sock_service) {
             ++cnt;
         }
