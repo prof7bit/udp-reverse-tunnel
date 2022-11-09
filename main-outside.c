@@ -57,7 +57,7 @@ void run_outside(args_parsed_t args) {
                     // From this moment on we know where to forward the client datagrams.
                     conn_entry_t* conn = conn_table_find_tunnel_address(&addr_incoming);
                     if (!conn) {
-                        print(LOG_INFO, "new incoming reverse tunnel from: %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                        print(LOG_DEBUG, "new incoming reverse tunnel from: %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
                         conn = conn_table_insert();
                         memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
                         conn->spare = true;
