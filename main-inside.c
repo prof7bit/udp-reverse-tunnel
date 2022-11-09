@@ -110,7 +110,7 @@ void run_inside(args_parsed_t args) {
                         }
 
                         // and immediately create another new spare connection
-                        print(LOG_INFO, "creating new outgoing spare tunnel");
+                        print(LOG_DEBUG, "creating new outgoing spare tunnel");
                         conn_entry_t* spare_conn = conn_table_insert();
                         spare_conn->spare = true;
                         spare_conn->sock_tunnel = socket(AF_INET, SOCK_DGRAM, 0);
