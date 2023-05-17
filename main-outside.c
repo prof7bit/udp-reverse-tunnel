@@ -16,6 +16,7 @@ void run_outside(args_parsed_t args) {
     struct sockaddr_in addr_own = {0};
     struct sockaddr_in addr_incoming = {0};
     uint64_t time_last_cleanup = 0;
+    bool log_client_connections = true;
 
     print(LOG_INFO, "UDP tunnel outside agent v" VERSION_STR);
 
@@ -63,6 +64,7 @@ void run_outside(args_parsed_t args) {
                         memcpy(&conn->addr_tunnel, &addr_incoming, len_addr);
                         conn->spare = true;
                         conn_print_numbers();
+                        log_client_connections = true;
                     }
                     conn->last_acticity = millisec();
                     continue;
@@ -80,7 +82,9 @@ void run_outside(args_parsed_t args) {
             // This is not from one of the known tunnel addresses, so it must be from a client.
             conn = conn_table_find_client_address(&addr_incoming);
             if (conn == NULL) {
-                print(LOG_INFO, "new client conection from %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                if (log_client_connections) {
+                    print(LOG_INFO, "new client conection from %s:%d", inet_ntoa(addr_incoming.sin_addr), addr_incoming.sin_port);
+                }
 
                 // now try to find a spare tunnel for this new client and activate it
                 conn = conn_table_find_next_spare();
@@ -94,7 +98,11 @@ void run_outside(args_parsed_t args) {
             if (conn) {
                 sendto(sockfd, buffer, nbytes, 0, (struct sockaddr*)&conn->addr_tunnel, len_addr);
             } else {
-                print(LOG_WARN, "could not find tunnel connection for client, dropping package");
+                if (log_client_connections) {
+                    print(LOG_WARN, "could not find tunnel connection for client, dropping package");
+                    print(LOG_DEBUG, "will not repeat above warning until inside agent connects again");
+                    log_client_connections = false;
+                }
             }
         }
 
