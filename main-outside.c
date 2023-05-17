@@ -27,7 +27,7 @@ void run_outside(args_parsed_t args) {
     struct timeval tv;
     tv.tv_sec = 0;
     tv.tv_usec = 500 * 1000;
-    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);    
+    setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 
     addr_own.sin_family = AF_INET;
     addr_own.sin_addr.s_addr = INADDR_ANY;
@@ -101,9 +101,7 @@ void run_outside(args_parsed_t args) {
         uint64_t ms = millisec();
         if (ms - time_last_cleanup > 1000) {
             time_last_cleanup = ms;
-            conn_table_clean(args.keepalive + 5, true); // periodic cleaning of stale entries
+            conn_table_clean(args.keepalive + 10, true); // periodic cleaning of stale entries
         }
     }
 }
-
-
